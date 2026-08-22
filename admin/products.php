@@ -1,6 +1,3 @@
-# `admin/products.php`
-
-```php
 <?php
 
 session_start();

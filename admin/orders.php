@@ -1,13 +1,44 @@
+
 <?php
 
 session_start();
 
-if (!isset($_SESSION["user_id"]) || $_SESSION["role"] != "admin") {
+if (
+    !isset($_SESSION["user_id"]) ||
+    !isset($_SESSION["role"]) ||
+    $_SESSION["role"] !== "admin"
+) {
     header("Location: login.php");
     exit();
 }
 
 require_once "../config/database.php";
+
+$message = "";
+
+if (isset($_GET["success"]) && $_GET["success"] === "status_updated") {
+    $message = "Order status updated successfully.";
+}
+
+if (isset($_GET["error"])) {
+    if ($_GET["error"] === "invalid_order") {
+        $message = "Invalid order.";
+    } elseif ($_GET["error"] === "invalid_status") {
+        $message = "Invalid order status.";
+    } elseif ($_GET["error"] === "order_not_found") {
+        $message = "Order not found.";
+    } elseif ($_GET["error"] === "update_failed") {
+        $message = "Could not update the order.";
+    } elseif ($_GET["error"] === "database") {
+        $message = "A database error occurred.";
+    }
+}
+
+
+/* =========================
+   ACTIVE ORDERS
+   ONLY PENDING / PROCESSING
+========================= */
 
 $sql = "SELECT
             orders.order_id,
@@ -20,6 +51,7 @@ $sql = "SELECT
         FROM orders
         INNER JOIN users
             ON orders.user_id = users.user_id
+        WHERE orders.status IN ('Pending', 'Processing')
         ORDER BY orders.order_date DESC";
 
 $result = $conn->query($sql);
@@ -46,8 +78,17 @@ $result = $conn->query($sql);
     <nav>
 
         <a href="dashboard.php">Dashboard</a>
+
         <a href="products.php">Products</a>
+
+        <a href="categories.php">Categories</a>
+
         <a href="orders.php">Orders</a>
+
+        <a href="order_history.php">Order History</a>
+
+        <a href="users.php">Users</a>
+
         <a href="logout.php">Logout</a>
 
     </nav>
@@ -59,23 +100,38 @@ $result = $conn->query($sql);
 
     <div class="hero">
 
-        <h2>Manage Orders 🛒</h2>
+        <h2>Active Orders 🛒</h2>
 
         <p>
-            View customer orders and update their status.
+            Manage pending and processing customer orders.
         </p>
 
     </div>
 
 
-    <?php if ($result->num_rows == 0): ?>
+    <?php if ($message !== ""): ?>
 
         <div class="card">
 
-            <h3>No orders yet.</h3>
+            <p>
+                <?php echo htmlspecialchars($message); ?>
+            </p>
+
+        </div>
+
+        <br>
+
+    <?php endif; ?>
+
+
+    <?php if (!$result || $result->num_rows === 0): ?>
+
+        <div class="card">
+
+            <h3>No active orders.</h3>
 
             <p>
-                Customer orders will appear here.
+                All current orders have been completed or cancelled.
             </p>
 
         </div>
@@ -87,33 +143,71 @@ $result = $conn->query($sql);
             <div class="card" style="margin-bottom: 20px;">
 
                 <h2>
-                    Order #<?php echo $order["order_id"]; ?>
+                    Order #
+                    <?php echo (int) $order["order_id"]; ?>
                 </h2>
 
                 <p>
+
                     <strong>Customer:</strong>
-                    <?php echo htmlspecialchars($order["name"]); ?>
+
+                    <?php
+                    echo htmlspecialchars(
+                        $order["name"]
+                    );
+                    ?>
+
                 </p>
 
                 <p>
+
                     <strong>Email:</strong>
-                    <?php echo htmlspecialchars($order["email"]); ?>
+
+                    <?php
+                    echo htmlspecialchars(
+                        $order["email"]
+                    );
+                    ?>
+
                 </p>
 
                 <p>
+
                     <strong>Total:</strong>
+
                     Rs.
+
                     <?php
                     echo number_format(
-                        $order["total_amount"],
+                        (float) $order["total_amount"],
                         2
                     );
                     ?>
+
                 </p>
 
                 <p>
+
                     <strong>Order Date:</strong>
-                    <?php echo $order["order_date"]; ?>
+
+                    <?php
+                    echo htmlspecialchars(
+                        $order["order_date"]
+                    );
+                    ?>
+
+                </p>
+
+                <p>
+
+                    <strong>Current Status:</strong>
+
+                    <?php
+                    echo htmlspecialchars(
+                        $order["status"]
+                    );
+                    ?>
+
                 </p>
 
 
@@ -125,20 +219,26 @@ $result = $conn->query($sql);
                     <input
                         type="hidden"
                         name="order_id"
-                        value="<?php echo $order["order_id"]; ?>"
+                        value="<?php
+                        echo (int) $order["order_id"];
+                        ?>"
                     >
 
-
                     <label>
-                        Order Status
+                        Change Status
                     </label>
 
-                    <select name="status">
+                    <select
+                        name="status"
+                        required
+                    >
 
                         <option
                             value="Pending"
                             <?php
-                            if ($order["status"] == "Pending") {
+                            if (
+                                $order["status"] === "Pending"
+                            ) {
                                 echo "selected";
                             }
                             ?>
@@ -149,7 +249,9 @@ $result = $conn->query($sql);
                         <option
                             value="Processing"
                             <?php
-                            if ($order["status"] == "Processing") {
+                            if (
+                                $order["status"] === "Processing"
+                            ) {
                                 echo "selected";
                             }
                             ?>
@@ -157,25 +259,11 @@ $result = $conn->query($sql);
                             Processing
                         </option>
 
-                        <option
-                            value="Delivered"
-                            <?php
-                            if ($order["status"] == "Delivered") {
-                                echo "selected";
-                            }
-                            ?>
-                        >
+                        <option value="Delivered">
                             Delivered
                         </option>
 
-                        <option
-                            value="Cancelled"
-                            <?php
-                            if ($order["status"] == "Cancelled") {
-                                echo "selected";
-                            }
-                            ?>
-                        >
+                        <option value="Cancelled">
                             Cancelled
                         </option>
 
@@ -209,3 +297,4 @@ $result = $conn->query($sql);
 </body>
 
 </html>
+```
