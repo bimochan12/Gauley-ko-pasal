@@ -3,6 +3,13 @@
 
 session_start();
 
+require_once "../config/database.php";
+
+
+/* =========================
+   ADMIN AUTHENTICATION
+========================= */
+
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -12,18 +19,19 @@ if (
     exit();
 }
 
-require_once "../config/database.php";
-
 
 /* =========================
-   COUNT ACTIVE ORDERS
+   COUNT PENDING SELLERS
 ========================= */
 
-$active_orders = 0;
+$pending_sellers = 0;
 
-$sql = "SELECT COUNT(*) AS total
-        FROM orders
-        WHERE status IN ('Pending', 'Processing')";
+$sql = "
+    SELECT COUNT(*) AS total
+    FROM users
+    WHERE role = 'seller'
+    AND seller_status = 'Pending'
+";
 
 $result = $conn->query($sql);
 
@@ -31,21 +39,78 @@ if ($result) {
 
     $row = $result->fetch_assoc();
 
-    $active_orders = (int) $row["total"];
+    $pending_sellers =
+        (int) $row["total"];
+
+}
+
+
+/* =========================
+   COUNT USERS
+========================= */
+
+$total_users = 0;
+
+$sql = "
+    SELECT COUNT(*) AS total
+    FROM users
+    WHERE role != 'seller'
+";
+
+$result = $conn->query($sql);
+
+if ($result) {
+
+    $row = $result->fetch_assoc();
+
+    $total_users =
+        (int) $row["total"];
+
+}
+
+
+/* =========================
+   COUNT SELLERS
+========================= */
+
+$total_sellers = 0;
+
+$sql = "
+    SELECT COUNT(*) AS total
+    FROM users
+    WHERE role = 'seller'
+";
+
+$result = $conn->query($sql);
+
+if ($result) {
+
+    $row = $result->fetch_assoc();
+
+    $total_sellers =
+        (int) $row["total"];
+
 }
 
 ?>
 
 <!DOCTYPE html>
+
 <html>
 
 <head>
 
-    <title>Gauley Ko Pasal - Admin Dashboard</title>
+    <title>
+        Admin Dashboard - Gauley Ko Pasal
+    </title>
 
-    <link rel="stylesheet" href="../style.css">
+    <link
+        rel="stylesheet"
+        href="../style.css"
+    >
 
 </head>
+
 
 <body>
 
@@ -63,24 +128,16 @@ if ($result) {
             Dashboard
         </a>
 
-        <a href="products.php">
-            Products
-        </a>
-
-        <a href="categories.php">
-            Categories
-        </a>
-
-        <a href="orders.php">
-            Orders
-        </a>
-
-        <a href="order_history.php">
-            Order History
+        <a href="sellers.php">
+            Sellers
         </a>
 
         <a href="users.php">
             Users
+        </a>
+
+        <a href="activity_logs.php">
+            Activity Logs
         </a>
 
         <a href="logout.php">
@@ -110,27 +167,20 @@ if ($result) {
             Welcome,
 
             <strong>
+
                 <?php
                 echo htmlspecialchars(
                     $_SESSION["name"]
                 );
                 ?>
+
             </strong>!
 
         </p>
 
         <p>
-
-            You are logged in as:
-
-            <strong>
-                <?php
-                echo htmlspecialchars(
-                    $_SESSION["role"]
-                );
-                ?>
-            </strong>
-
+            Manage users, seller registrations,
+            and monitor important system activity.
         </p>
 
     </div>
@@ -143,42 +193,25 @@ if ($result) {
     <div class="products">
 
 
-        <!-- PRODUCTS -->
+        <!-- SELLERS -->
 
         <div class="product-card">
 
             <h3>
-                📦 Products
-            </h3>
+                🏪 Seller Applications
 
-            <p>
-                Add, edit and delete products.
-            </p>
-
-            <a
-                class="button"
-                href="products.php"
-            >
-                Manage Products
-            </a>
-
-        </div>
-
-
-        <!-- ACTIVE ORDERS -->
-
-        <div class="product-card">
-
-            <h3>
-                🛒 Active Orders
-
-                <?php if ($active_orders > 0): ?>
+                <?php if (
+                    $pending_sellers > 0
+                ): ?>
 
                     <span>
+
                         🔴
+
                         <?php
-                        echo $active_orders;
+                        echo $pending_sellers;
                         ?>
+
                     </span>
 
                 <?php endif; ?>
@@ -190,16 +223,18 @@ if ($result) {
 
                 <?php
 
-                if ($active_orders > 0) {
+                if (
+                    $pending_sellers > 0
+                ) {
 
                     echo
-                        $active_orders .
-                        " order(s) need your attention.";
+                        $pending_sellers .
+                        " seller application(s) waiting for approval.";
 
                 } else {
 
                     echo
-                        "No pending or processing orders.";
+                        "No seller applications waiting for approval.";
 
                 }
 
@@ -210,31 +245,9 @@ if ($result) {
 
             <a
                 class="button"
-                href="orders.php"
+                href="sellers.php"
             >
-                Manage Orders
-            </a>
-
-        </div>
-
-
-        <!-- ORDER HISTORY -->
-
-        <div class="product-card">
-
-            <h3>
-                📋 Order History
-            </h3>
-
-            <p>
-                View delivered and cancelled orders.
-            </p>
-
-            <a
-                class="button"
-                href="order_history.php"
-            >
-                View History
+                Manage Sellers
             </a>
 
         </div>
@@ -249,8 +262,19 @@ if ($result) {
             </h3>
 
             <p>
-                View registered customers and sellers.
+
+                Total registered users:
+
+                <strong>
+
+                    <?php
+                    echo $total_users;
+                    ?>
+
+                </strong>
+
             </p>
+
 
             <a
                 class="button"
@@ -262,23 +286,58 @@ if ($result) {
         </div>
 
 
-        <!-- CATEGORIES -->
+        <!-- TOTAL SELLERS -->
 
         <div class="product-card">
 
             <h3>
-                🗂️ Categories
+                🏪 Total Sellers
             </h3>
 
             <p>
-                Add, edit and manage product categories.
+
+                Registered seller accounts:
+
+                <strong>
+
+                    <?php
+                    echo $total_sellers;
+                    ?>
+
+                </strong>
+
             </p>
+
 
             <a
                 class="button"
-                href="categories.php"
+                href="sellers.php"
             >
-                Manage Categories
+                View Sellers
+            </a>
+
+        </div>
+
+
+        <!-- ACTIVITY LOGS -->
+
+        <div class="product-card">
+
+            <h3>
+                📋 Activity Logs
+            </h3>
+
+            <p>
+                View important actions performed
+                by administrators.
+            </p>
+
+
+            <a
+                class="button"
+                href="activity_logs.php"
+            >
+                View Activity Logs
             </a>
 
         </div>
@@ -293,7 +352,8 @@ if ($result) {
 <footer>
 
     <p>
-        Gauley Ko Pasal — Admin Panel 🇳🇵
+        Gauley Ko Pasal —
+        Admin Panel 🇳🇵
     </p>
 
 </footer>

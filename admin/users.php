@@ -1,4 +1,4 @@
-```php
+
 <?php
 
 session_start();
@@ -48,12 +48,16 @@ if (
     } else {
 
 
-        /* Check whether user exists */
+        /* =========================
+           CHECK USER EXISTS
+           SELLERS CANNOT BE DELETED
+        ========================= */
 
         $check_stmt = $conn->prepare(
-            "SELECT user_id, role
+            "SELECT user_id, name, role
              FROM users
-             WHERE user_id = ?"
+             WHERE user_id = ?
+             AND role != 'seller'"
         );
 
         $check_stmt->bind_param(
@@ -95,7 +99,7 @@ if (
                 );
 
                 $admin_count =
-                    $admin_result
+                    (int) $admin_result
                     ->fetch_assoc()["total"];
 
 
@@ -134,7 +138,7 @@ if (
                     $order_stmt->get_result();
 
                 $order_count =
-                    $order_result
+                    (int) $order_result
                     ->fetch_assoc()["total"];
 
 
@@ -158,7 +162,8 @@ if (
 
                 $delete_stmt = $conn->prepare(
                     "DELETE FROM users
-                     WHERE user_id = ?"
+                     WHERE user_id = ?
+                     AND role != 'seller'"
                 );
 
                 $delete_stmt->bind_param(
@@ -168,6 +173,44 @@ if (
 
 
                 if ($delete_stmt->execute()) {
+
+                    /* RECORD ACTIVITY */
+
+                    $admin_id =
+                        (int) $_SESSION["user_id"];
+
+                    $action =
+                        "User deleted";
+
+                    $details =
+                        "Admin deleted " .
+                        $user_to_delete["name"] .
+                        " (User ID: " .
+                        $delete_user_id .
+                        ", Role: " .
+                        $user_to_delete["role"] .
+                        ").";
+
+
+                    $log_stmt = $conn->prepare(
+                        "INSERT INTO activity_logs
+                        (
+                            user_id,
+                            action,
+                            details
+                        )
+                        VALUES (?, ?, ?)"
+                    );
+
+                    $log_stmt->bind_param(
+                        "iss",
+                        $admin_id,
+                        $action,
+                        $details
+                    );
+
+                    $log_stmt->execute();
+
 
                     $message =
                         "User account deleted successfully.";
@@ -193,12 +236,12 @@ if (
 
 
 /* =========================
-   CREATE ADMIN / SELLER
+   CREATE ADMIN ACCOUNT
 ========================= */
 
 if (
-    $_SERVER["REQUEST_METHOD"] === "POST"
-    && isset($_POST["create_user"])
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST["create_user"])
 ) {
 
     $name =
@@ -210,28 +253,10 @@ if (
     $password =
         $_POST["password"];
 
-    $role =
-        $_POST["role"];
-
-
-    /* Validate role */
-
-    if (
-        $role !== "admin" &&
-        $role !== "seller"
-    ) {
-
-        $message =
-            "Invalid account role.";
-
-        $message_type = "error";
-
-    }
-
 
     /* Validate fields */
 
-    elseif (
+    if (
         $name === "" ||
         $email === "" ||
         $password === ""
@@ -243,9 +268,6 @@ if (
         $message_type = "error";
 
     }
-
-
-    /* Validate email */
 
     elseif (
         !filter_var(
@@ -261,9 +283,6 @@ if (
 
     }
 
-
-    /* Password length */
-
     elseif (
         strlen($password) < 6
     ) {
@@ -275,9 +294,7 @@ if (
 
     }
 
-
     else {
-
 
         /* Check duplicate email */
 
@@ -309,7 +326,6 @@ if (
 
         } else {
 
-
             /* Hash password */
 
             $hashed_password =
@@ -319,34 +335,83 @@ if (
                 );
 
 
-            /* Create account */
+            /* Create admin */
 
             $stmt = $conn->prepare(
                 "INSERT INTO users
-                    (name, email, password, role)
-                 VALUES (?, ?, ?, ?)"
+                (
+                    name,
+                    email,
+                    password,
+                    role
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    'admin'
+                )"
             );
 
             $stmt->bind_param(
-                "ssss",
+                "sss",
                 $name,
                 $email,
-                $hashed_password,
-                $role
+                $hashed_password
             );
 
 
             if ($stmt->execute()) {
 
+                /* RECORD ACTIVITY */
+
+                $admin_id =
+                    (int) $_SESSION["user_id"];
+
+                $new_admin_id =
+                    $conn->insert_id;
+
+                $action =
+                    "Admin account created";
+
+                $details =
+                    "Admin created a new administrator account: " .
+                    $name .
+                    " (User ID: " .
+                    $new_admin_id .
+                    ").";
+
+
+                $log_stmt = $conn->prepare(
+                    "INSERT INTO activity_logs
+                    (
+                        user_id,
+                        action,
+                        details
+                    )
+                    VALUES (?, ?, ?)"
+                );
+
+                $log_stmt->bind_param(
+                    "iss",
+                    $admin_id,
+                    $action,
+                    $details
+                );
+
+                $log_stmt->execute();
+
+
                 $message =
-                    "Account created successfully.";
+                    "Admin account created successfully.";
 
                 $message_type = "success";
 
             } else {
 
                 $message =
-                    "Could not create account.";
+                    "Could not create admin account.";
 
                 $message_type = "error";
 
@@ -361,15 +426,19 @@ if (
 
 /* =========================
    GET USERS
+   EXCLUDE SELLERS
 ========================= */
 
-$sql = "SELECT
-            user_id,
-            name,
-            email,
-            role
-        FROM users
-        ORDER BY user_id DESC";
+$sql = "
+    SELECT
+        user_id,
+        name,
+        email,
+        role
+    FROM users
+    WHERE role != 'seller'
+    ORDER BY user_id DESC
+";
 
 $result =
     $conn->query($sql);
@@ -409,20 +478,16 @@ $result =
             Dashboard
         </a>
 
-        <a href="products.php">
-            Products
-        </a>
-
-        <a href="categories.php">
-            Categories
-        </a>
-
-        <a href="orders.php">
-            Orders
+        <a href="sellers.php">
+            Sellers
         </a>
 
         <a href="users.php">
             Users
+        </a>
+
+        <a href="activity_logs.php">
+            Activity Logs
         </a>
 
         <a href="logout.php">
@@ -437,26 +502,18 @@ $result =
 <div class="container">
 
 
-    <!-- =========================
-         PAGE HEADER
-    ========================== -->
-
     <div class="hero">
 
         <h2>
-            User Management
+            User Management 👥
         </h2>
 
         <p>
-            Manage customers, sellers and admin accounts.
+            Manage registered users and administrator accounts.
         </p>
 
     </div>
 
-
-    <!-- =========================
-         MESSAGE
-    ========================== -->
 
     <?php if ($message !== ""): ?>
 
@@ -474,22 +531,21 @@ $result =
 
         </div>
 
+        <br>
+
     <?php endif; ?>
 
 
-    <!-- =========================
-         CREATE ACCOUNT
-    ========================== -->
+    <!-- CREATE ADMIN -->
 
     <div class="card">
 
         <h2>
-            Create Admin / Seller Account
+            Create Admin Account
         </h2>
 
         <p>
-            Only logged-in administrators can create
-            admin or seller accounts.
+            Create another administrator account.
         </p>
 
 
@@ -542,30 +598,8 @@ $result =
             <br><br>
 
 
-            <label>
-                Account Type
-            </label>
-
-            <select
-                name="role"
-                required
-            >
-
-                <option value="admin">
-                    Admin
-                </option>
-
-                <option value="seller">
-                    Seller
-                </option>
-
-            </select>
-
-            <br><br>
-
-
             <button type="submit">
-                Create Account
+                Create Admin
             </button>
 
         </form>
@@ -576,15 +610,18 @@ $result =
     <br>
 
 
-    <!-- =========================
-         USER LIST
-    ========================== -->
+    <!-- REGISTERED USERS -->
 
     <div class="card">
 
         <h2>
             Registered Users
         </h2>
+
+        <p>
+            Seller registrations are managed separately
+            from the Sellers page.
+        </p>
 
 
         <?php if (
@@ -599,25 +636,15 @@ $result =
 
                     <tr>
 
-                        <th>
-                            ID
-                        </th>
+                        <th>ID</th>
 
-                        <th>
-                            Name
-                        </th>
+                        <th>Name</th>
 
-                        <th>
-                            Email
-                        </th>
+                        <th>Email</th>
 
-                        <th>
-                            Role
-                        </th>
+                        <th>Role</th>
 
-                        <th>
-                            Action
-                        </th>
+                        <th>Action</th>
 
                     </tr>
 
@@ -686,19 +713,18 @@ $result =
                         <td>
 
 
-                            <?php
-
-                            if (
+                            <?php if (
                                 (int) $user["user_id"]
                                 !==
                                 (int) $_SESSION["user_id"]
-                            ):
-
-                            ?>
+                            ): ?>
 
 
                                 <a
-                                    href="users.php?delete=<?php echo $user["user_id"]; ?>"
+                                    href="users.php?delete=<?php
+                                    echo (int)
+                                        $user["user_id"];
+                                    ?>"
                                     onclick="return confirm('Are you sure you want to delete this account?');"
                                 >
                                     Delete
@@ -763,10 +789,8 @@ $result =
 <footer>
 
     <p>
-
         Gauley Ko Pasal —
         Admin Panel 🇳🇵
-
     </p>
 
 </footer>

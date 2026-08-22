@@ -7,67 +7,174 @@ require_once "../config/database.php";
 
 $message = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+/* =========================
+   ADMIN LOGIN
+========================= */
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $email = trim($_POST["email"]);
     $password = $_POST["password"];
 
-    $sql = "SELECT * FROM users WHERE email = ? AND role = 'admin'";
+
+    /* =========================
+       FIND ADMIN ACCOUNT
+    ========================= */
+
+    $sql = "
+        SELECT
+            user_id,
+            name,
+            email,
+            password,
+            role
+        FROM users
+        WHERE email = ?
+        AND role = 'admin'
+    ";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
+
+    $stmt->bind_param(
+        "s",
+        $email
+    );
+
     $stmt->execute();
 
     $result = $stmt->get_result();
 
-    if ($result->num_rows == 1) {
+
+    /* =========================
+       VERIFY LOGIN
+    ========================= */
+
+    if ($result->num_rows === 1) {
 
         $user = $result->fetch_assoc();
 
-        if (password_verify($password, $user["password"])) {
 
-            $_SESSION["user_id"] = $user["user_id"];
-            $_SESSION["name"] = $user["name"];
-            $_SESSION["role"] = $user["role"];
+        if (
+            password_verify(
+                $password,
+                $user["password"]
+            )
+        ) {
 
-            header("Location: dashboard.php");
+            /* =========================
+               CREATE SESSION
+            ========================= */
+
+            $_SESSION["user_id"] =
+                $user["user_id"];
+
+            $_SESSION["name"] =
+                $user["name"];
+
+            $_SESSION["role"] =
+                $user["role"];
+
+
+            /* =========================
+               RECORD LOGIN ACTIVITY
+            ========================= */
+
+            $admin_id =
+                (int) $user["user_id"];
+
+            $action =
+                "Admin logged in";
+
+            $details =
+                "Admin " .
+                $user["name"] .
+                " logged into the admin panel.";
+
+
+            $log_stmt = $conn->prepare(
+                "INSERT INTO activity_logs
+                (
+                    user_id,
+                    action,
+                    details
+                )
+                VALUES (?, ?, ?)"
+            );
+
+            if ($log_stmt) {
+
+                $log_stmt->bind_param(
+                    "iss",
+                    $admin_id,
+                    $action,
+                    $details
+                );
+
+                $log_stmt->execute();
+
+            }
+
+
+            /* =========================
+               REDIRECT
+            ========================= */
+
+            header(
+                "Location: dashboard.php"
+            );
+
             exit();
 
         } else {
 
-            $message = "Incorrect password.";
+            $message =
+                "Incorrect password.";
 
         }
 
     } else {
 
-        $message = "Admin account not found.";
+        $message =
+            "Admin account not found.";
 
     }
+
 }
 
 ?>
 
 <!DOCTYPE html>
+
 <html>
 
 <head>
 
-    <title>Gauley Ko Pasal - Admin Login</title>
+    <title>
+        Gauley Ko Pasal - Admin Login
+    </title>
 
-    <link rel="stylesheet" href="../style.css">
+    <link
+        rel="stylesheet"
+        href="../style.css"
+    >
 
 </head>
 
 <body>
 
+
 <header>
 
-    <h1>Gauley Ko Pasal</h1>
+    <h1>
+        Gauley Ko Pasal
+    </h1>
 
     <nav>
 
-        <a href="login.php">Admin Login</a>
+        <a href="login.php">
+            Admin Login
+        </a>
 
     </nav>
 
@@ -76,12 +183,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <div class="container">
 
+
     <div class="hero">
 
-        <h2>Admin Login</h2>
+        <h2>
+            Admin Login
+        </h2>
 
         <p>
-            Login to manage your Gauley Ko Pasal store.
+            Login to manage the Gauley Ko Pasal
+            administration panel.
         </p>
 
     </div>
@@ -89,10 +200,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div class="card">
 
-        <?php if ($message != ""): ?>
+
+        <?php if ($message !== ""): ?>
 
             <p>
-                <?php echo htmlspecialchars($message); ?>
+
+                <?php
+                echo htmlspecialchars(
+                    $message
+                );
+                ?>
+
             </p>
 
         <?php endif; ?>
@@ -100,7 +218,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <form method="POST">
 
-            <label>Email</label>
+
+            <label>
+                Email
+            </label>
 
             <input
                 type="email"
@@ -111,7 +232,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <br><br>
 
 
-            <label>Password</label>
+            <label>
+                Password
+            </label>
 
             <input
                 type="password"
@@ -126,9 +249,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 Login
             </button>
 
+
         </form>
 
+
     </div>
+
 
 </div>
 
@@ -136,10 +262,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <footer>
 
     <p>
-        Gauley Ko Pasal — Admin Panel 🇳🇵
+        Gauley Ko Pasal —
+        Admin Panel 🇳🇵
     </p>
 
 </footer>
+
 
 </body>
 

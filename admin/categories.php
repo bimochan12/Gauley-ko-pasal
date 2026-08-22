@@ -4,6 +4,11 @@ session_start();
 
 require_once "../config/database.php";
 
+
+/* =========================
+   ADMIN AUTHENTICATION
+========================= */
+
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -13,23 +18,31 @@ if (
     exit();
 }
 
+
 $message = "";
 
-/*
-|--------------------------------------------------------------------------
-| Add Category
-|--------------------------------------------------------------------------
-*/
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+/* =========================
+   ADD CATEGORY
+========================= */
 
-    $category_name = trim($_POST["category_name"]);
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST"
+) {
+
+    $category_name =
+        trim($_POST["category_name"]);
+
 
     if ($category_name === "") {
 
-        $message = "Category name cannot be empty.";
+        $message =
+            "Category name cannot be empty.";
 
     } else {
+
+
+        /* Check duplicate category */
 
         $check = $conn->prepare(
             "SELECT category_id
@@ -37,31 +50,50 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
              WHERE category_name = ?"
         );
 
-        $check->bind_param("s", $category_name);
+        $check->bind_param(
+            "s",
+            $category_name
+        );
+
         $check->execute();
 
-        $existing = $check->get_result();
+        $existing =
+            $check->get_result();
+
 
         if ($existing->num_rows > 0) {
 
-            $message = "Category already exists.";
+            $message =
+                "Category already exists.";
 
         } else {
 
+
+            /* Add category */
+
             $stmt = $conn->prepare(
-                "INSERT INTO categories (category_name)
-                 VALUES (?)"
+                "INSERT INTO categories
+                (
+                    category_name
+                )
+                VALUES (?)"
             );
 
-            $stmt->bind_param("s", $category_name);
+            $stmt->bind_param(
+                "s",
+                $category_name
+            );
+
 
             if ($stmt->execute()) {
 
-                $message = "Category added successfully.";
+                $message =
+                    "Category added successfully.";
 
             } else {
 
-                $message = "Failed to add category.";
+                $message =
+                    "Failed to add category.";
 
             }
 
@@ -72,19 +104,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| Delete Category
-|--------------------------------------------------------------------------
-*/
+/* =========================
+   DELETE CATEGORY
+========================= */
 
-if (isset($_GET["delete"])) {
+if (
+    isset($_GET["delete"])
+) {
 
-    $category_id = (int) $_GET["delete"];
+    $category_id =
+        (int) $_GET["delete"];
 
-    /*
-     * Check whether products are using this category.
-     */
+
+    /* Check products using category */
 
     $check = $conn->prepare(
         "SELECT COUNT(*) AS total
@@ -92,11 +124,20 @@ if (isset($_GET["delete"])) {
          WHERE category_id = ?"
     );
 
-    $check->bind_param("i", $category_id);
+    $check->bind_param(
+        "i",
+        $category_id
+    );
+
     $check->execute();
 
-    $check_result = $check->get_result();
-    $product_count = $check_result->fetch_assoc()["total"];
+    $check_result =
+        $check->get_result();
+
+    $product_count =
+        $check_result
+        ->fetch_assoc()["total"];
+
 
     if ($product_count > 0) {
 
@@ -105,20 +146,29 @@ if (isset($_GET["delete"])) {
 
     } else {
 
+
+        /* Delete category */
+
         $stmt = $conn->prepare(
             "DELETE FROM categories
              WHERE category_id = ?"
         );
 
-        $stmt->bind_param("i", $category_id);
+        $stmt->bind_param(
+            "i",
+            $category_id
+        );
+
 
         if ($stmt->execute()) {
 
-            $message = "Category deleted successfully.";
+            $message =
+                "Category deleted successfully.";
 
         } else {
 
-            $message = "Failed to delete category.";
+            $message =
+                "Failed to delete category.";
 
         }
 
@@ -127,14 +177,14 @@ if (isset($_GET["delete"])) {
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| Get Categories
-|--------------------------------------------------------------------------
-*/
+/* =========================
+   GET CATEGORIES
+========================= */
 
 $result = $conn->query(
-    "SELECT category_id, category_name
+    "SELECT
+        category_id,
+        category_name
      FROM categories
      ORDER BY category_name ASC"
 );
@@ -146,31 +196,48 @@ $result = $conn->query(
 
 <head>
 
-    <title>Manage Categories - Gauley Ko Pasal</title>
+    <title>
+        Manage Categories - Gauley Ko Pasal
+    </title>
 
-    <link rel="stylesheet" href="../style.css">
+    <link
+        rel="stylesheet"
+        href="../style.css"
+    >
 
 </head>
 
 <body>
 
+
 <header>
 
-    <h1>Gauley Ko Pasal</h1>
+    <h1>
+        Gauley Ko Pasal
+    </h1>
+
 
     <nav>
 
-        <a href="dashboard.php">Dashboard</a>
+        <a href="dashboard.php">
+            Dashboard
+        </a>
 
-        <a href="products.php">Products</a>
+        <a href="sellers.php">
+            Sellers
+        </a>
 
-        <a href="categories.php">Categories</a>
+        <a href="users.php">
+            Users
+        </a>
 
-        <a href="orders.php">Orders</a>
+        <a href="categories.php">
+            Categories
+        </a>
 
-        <a href="users.php">Users</a>
-
-        <a href="logout.php">Logout</a>
+        <a href="logout.php">
+            Logout
+        </a>
 
     </nav>
 
@@ -179,23 +246,37 @@ $result = $conn->query(
 
 <div class="container">
 
+
+    <!-- PAGE HEADER -->
+
     <div class="hero">
 
-        <h2>Manage Categories</h2>
+        <h2>
+            Manage Categories 🗂️
+        </h2>
 
         <p>
-            Add and manage product categories.
+            Add and manage product categories
+            for sellers to use.
         </p>
 
     </div>
 
+
+    <!-- MESSAGE -->
 
     <?php if ($message !== ""): ?>
 
         <div class="card">
 
             <p>
-                <?php echo htmlspecialchars($message); ?>
+
+                <?php
+                echo htmlspecialchars(
+                    $message
+                );
+                ?>
+
             </p>
 
         </div>
@@ -203,19 +284,23 @@ $result = $conn->query(
     <?php endif; ?>
 
 
+    <!-- ADD CATEGORY -->
+
     <div class="card">
 
-        <h3>Add New Category</h3>
+        <h3>
+            Add New Category
+        </h3>
+
 
         <form method="POST">
 
-            <label for="category_name">
+            <label>
                 Category Name
             </label>
 
             <input
                 type="text"
-                id="category_name"
                 name="category_name"
                 placeholder="Example: Drinks"
                 maxlength="100"
@@ -223,6 +308,7 @@ $result = $conn->query(
             >
 
             <br><br>
+
 
             <button type="submit">
                 Add Category
@@ -236,11 +322,20 @@ $result = $conn->query(
     <br>
 
 
+    <!-- CATEGORY LIST -->
+
     <div class="card">
 
-        <h3>Existing Categories</h3>
+        <h3>
+            Existing Categories
+        </h3>
 
-        <?php if ($result && $result->num_rows > 0): ?>
+
+        <?php if (
+            $result &&
+            $result->num_rows > 0
+        ): ?>
+
 
             <table>
 
@@ -248,47 +343,65 @@ $result = $conn->query(
 
                     <tr>
 
-                        <th>ID</th>
+                        <th>
+                            ID
+                        </th>
 
-                        <th>Category Name</th>
+                        <th>
+                            Category Name
+                        </th>
 
-                        <th>Action</th>
+                        <th>
+                            Action
+                        </th>
 
                     </tr>
 
                 </thead>
 
+
                 <tbody>
 
-                    <?php while ($category = $result->fetch_assoc()): ?>
+
+                    <?php while (
+                        $category =
+                        $result->fetch_assoc()
+                    ): ?>
+
 
                         <tr>
 
                             <td>
+
                                 <?php
                                 echo htmlspecialchars(
-                                    $category["category_id"]
+                                    $category[
+                                        "category_id"
+                                    ]
                                 );
                                 ?>
+
                             </td>
 
+
                             <td>
+
                                 <?php
                                 echo htmlspecialchars(
-                                    $category["category_name"]
+                                    $category[
+                                        "category_name"
+                                    ]
                                 );
                                 ?>
+
                             </td>
+
 
                             <td>
 
                                 <a
-                                    href="categories.php?delete=<?php
-                                    echo $category["category_id"];
-                                    ?>"
-                                    onclick="return confirm(
-                                        'Are you sure you want to delete this category?'
-                                    );"
+                                    href="categories.php?delete=<?php echo (int) $category["category_id"]; ?>"
+                                    onclick="return confirm('Are you sure you want to delete this category?');"
                                 >
                                     Delete
                                 </a>
@@ -297,28 +410,36 @@ $result = $conn->query(
 
                         </tr>
 
+
                     <?php endwhile; ?>
+
 
                 </tbody>
 
             </table>
 
+
         <?php else: ?>
+
 
             <p>
                 No categories found.
             </p>
 
+
         <?php endif; ?>
+
 
     </div>
 
 
     <br>
 
+
     <a href="dashboard.php">
         ← Back to Dashboard
     </a>
+
 
 </div>
 
@@ -326,10 +447,12 @@ $result = $conn->query(
 <footer>
 
     <p>
-        © <?php echo date("Y"); ?> Gauley Ko Pasal
+        © <?php echo date("Y"); ?>
+        Gauley Ko Pasal — Admin Panel 🇳🇵
     </p>
 
 </footer>
+
 
 </body>
 

@@ -1,6 +1,4 @@
-# `admin/edit_product.php`
 
-```php
 <?php
 
 session_start();
