@@ -1,3 +1,4 @@
+
 <?php
 
 session_start();
@@ -66,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <nav>
 
-        <a href="../customer/index.php">Customer Store</a>
+        <a href="login.php">Admin Login</a>
 
     </nav>
 
@@ -77,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div class="hero">
 
-        <h2>Admin / Seller Login</h2>
+        <h2>Admin Login</h2>
 
         <p>
             Login to manage your Gauley Ko Pasal store.
@@ -143,3 +144,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </body>
 
 </html>
+```
