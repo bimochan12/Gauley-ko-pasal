@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -40,13 +39,10 @@ if (
 
     if ($delete_user_id === (int) $_SESSION["user_id"]) {
 
-        $message =
-            "You cannot delete your own account.";
-
+        $message = "You cannot delete your own account.";
         $message_type = "error";
 
     } else {
-
 
         /* =========================
            CHECK USER EXISTS
@@ -67,30 +63,24 @@ if (
 
         $check_stmt->execute();
 
-        $user_result =
-            $check_stmt->get_result();
+        $user_result = $check_stmt->get_result();
 
 
         if ($user_result->num_rows === 0) {
 
-            $message =
-                "User account not found.";
-
+            $message = "User account not found.";
             $message_type = "error";
 
         } else {
 
-            $user_to_delete =
-                $user_result->fetch_assoc();
+            $user_to_delete = $user_result->fetch_assoc();
 
 
             /* =========================
                PROTECT LAST ADMIN
             ========================= */
 
-            if (
-                $user_to_delete["role"] === "admin"
-            ) {
+            if ($user_to_delete["role"] === "admin") {
 
                 $admin_result = $conn->query(
                     "SELECT COUNT(*) AS total
@@ -99,8 +89,7 @@ if (
                 );
 
                 $admin_count =
-                    (int) $admin_result
-                    ->fetch_assoc()["total"];
+                    (int) $admin_result->fetch_assoc()["total"];
 
 
                 if ($admin_count <= 1) {
@@ -109,9 +98,7 @@ if (
                         "You cannot delete the last admin account.";
 
                     $message_type = "error";
-
                 }
-
             }
 
 
@@ -134,12 +121,10 @@ if (
 
                 $order_stmt->execute();
 
-                $order_result =
-                    $order_stmt->get_result();
+                $order_result = $order_stmt->get_result();
 
                 $order_count =
-                    (int) $order_result
-                    ->fetch_assoc()["total"];
+                    (int) $order_result->fetch_assoc()["total"];
 
 
                 if ($order_count > 0) {
@@ -148,9 +133,7 @@ if (
                         "This user cannot be deleted because they have existing orders.";
 
                     $message_type = "error";
-
                 }
-
             }
 
 
@@ -202,14 +185,17 @@ if (
                         VALUES (?, ?, ?)"
                     );
 
-                    $log_stmt->bind_param(
-                        "iss",
-                        $admin_id,
-                        $action,
-                        $details
-                    );
+                    if ($log_stmt) {
 
-                    $log_stmt->execute();
+                        $log_stmt->bind_param(
+                            "iss",
+                            $admin_id,
+                            $action,
+                            $details
+                        );
+
+                        $log_stmt->execute();
+                    }
 
 
                     $message =
@@ -223,15 +209,10 @@ if (
                         "Could not delete the user account.";
 
                     $message_type = "error";
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -393,14 +374,17 @@ if (
                     VALUES (?, ?, ?)"
                 );
 
-                $log_stmt->bind_param(
-                    "iss",
-                    $admin_id,
-                    $action,
-                    $details
-                );
+                if ($log_stmt) {
 
-                $log_stmt->execute();
+                    $log_stmt->bind_param(
+                        "iss",
+                        $admin_id,
+                        $action,
+                        $details
+                    );
+
+                    $log_stmt->execute();
+                }
 
 
                 $message =
@@ -414,13 +398,21 @@ if (
                     "Could not create admin account.";
 
                 $message_type = "error";
-
             }
-
         }
-
     }
+}
 
+
+/* =========================
+   USER SEARCH
+========================= */
+
+$search = "";
+
+if (isset($_GET["search"])) {
+
+    $search = trim($_GET["search"]);
 }
 
 
@@ -429,23 +421,57 @@ if (
    EXCLUDE SELLERS
 ========================= */
 
-$sql = "
-    SELECT
-        user_id,
-        name,
-        email,
-        role
-    FROM users
-    WHERE role != 'seller'
-    ORDER BY user_id DESC
-";
+if ($search !== "") {
 
-$result =
-    $conn->query($sql);
+    $search_term = "%" . $search . "%";
+
+    $stmt = $conn->prepare(
+        "SELECT
+            user_id,
+            name,
+            email,
+            role
+         FROM users
+         WHERE role != 'seller'
+         AND (
+             name LIKE ?
+             OR email LIKE ?
+             OR role LIKE ?
+         )
+         ORDER BY user_id DESC"
+    );
+
+    $stmt->bind_param(
+        "sss",
+        $search_term,
+        $search_term,
+        $search_term
+    );
+
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+} else {
+
+    $sql = "
+        SELECT
+            user_id,
+            name,
+            email,
+            role
+        FROM users
+        WHERE role != 'seller'
+        ORDER BY user_id DESC
+    ";
+
+    $result = $conn->query($sql);
+}
 
 ?>
 
 <!DOCTYPE html>
+
 <html>
 
 <head>
@@ -458,6 +484,38 @@ $result =
         rel="stylesheet"
         href="../style.css"
     >
+
+    <style>
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .search-box button {
+            padding: 10px 18px;
+            cursor: pointer;
+        }
+
+        .clear-search {
+            display: inline-block;
+            padding: 10px 18px;
+            text-decoration: none;
+            border-radius: 5px;
+            background: #ddd;
+            color: #222;
+        }
+
+    </style>
 
 </head>
 
@@ -522,9 +580,7 @@ $result =
             <p>
 
                 <?php
-                echo htmlspecialchars(
-                    $message
-                );
+                echo htmlspecialchars($message);
                 ?>
 
             </p>
@@ -536,7 +592,9 @@ $result =
     <?php endif; ?>
 
 
-    <!-- CREATE ADMIN -->
+    <!-- =========================
+         CREATE ADMIN
+    ========================== -->
 
     <div class="card">
 
@@ -610,7 +668,9 @@ $result =
     <br>
 
 
-    <!-- REGISTERED USERS -->
+    <!-- =========================
+         REGISTERED USERS
+    ========================== -->
 
     <div class="card">
 
@@ -622,6 +682,40 @@ $result =
             Seller registrations are managed separately
             from the Sellers page.
         </p>
+
+
+        <!-- =========================
+             SEARCH USERS
+        ========================== -->
+
+        <form
+            method="GET"
+            class="search-box"
+        >
+
+            <input
+                type="text"
+                name="search"
+                placeholder="Search by name, email or role..."
+                value="<?php echo htmlspecialchars($search); ?>"
+            >
+
+            <button type="submit">
+                Search
+            </button>
+
+            <?php if ($search !== ""): ?>
+
+                <a
+                    href="users.php"
+                    class="clear-search"
+                >
+                    Clear
+                </a>
+
+            <?php endif; ?>
+
+        </form>
 
 
         <?php if (
@@ -722,8 +816,7 @@ $result =
 
                                 <a
                                     href="users.php?delete=<?php
-                                    echo (int)
-                                        $user["user_id"];
+                                    echo (int) $user["user_id"];
                                     ?>"
                                     onclick="return confirm('Are you sure you want to delete this account?');"
                                 >
@@ -765,7 +858,18 @@ $result =
 
 
             <p>
-                No registered users found.
+
+                <?php if ($search !== ""): ?>
+
+                    No users found matching
+                    "<strong><?php echo htmlspecialchars($search); ?></strong>".
+
+                <?php else: ?>
+
+                    No registered users found.
+
+                <?php endif; ?>
+
             </p>
 
 
@@ -799,4 +903,3 @@ $result =
 </body>
 
 </html>
-```

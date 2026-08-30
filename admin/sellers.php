@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -21,6 +20,7 @@ if (
 
 
 $message = "";
+$message_type = "";
 
 
 /* =========================
@@ -29,13 +29,12 @@ $message = "";
 
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST["seller_id"]) &&
     isset($_POST["seller_action"])
 ) {
 
     $seller_id = (int) $_POST["seller_id"];
-
-    $seller_action =
-        $_POST["seller_action"];
+    $seller_action = $_POST["seller_action"];
 
 
     if (
@@ -43,8 +42,14 @@ if (
         $seller_action === "reject"
     ) {
 
+        $new_status =
+            ($seller_action === "approve")
+            ? "Approved"
+            : "Rejected";
+
+
         /* =========================
-           GET SELLER INFORMATION
+           GET SELLER
         ========================= */
 
         $seller_stmt = $conn->prepare(
@@ -54,148 +59,203 @@ if (
              AND role = 'seller'"
         );
 
-        $seller_stmt->bind_param(
-            "i",
-            $seller_id
-        );
 
-        $seller_stmt->execute();
+        if ($seller_stmt) {
 
-        $seller_result =
-            $seller_stmt->get_result();
-
-
-        if (
-            $seller_result->num_rows === 0
-        ) {
-
-            $message =
-                "Seller account was not found.";
-
-        } else {
-
-            $seller_data =
-                $seller_result->fetch_assoc();
-
-            $seller_name =
-                $seller_data["name"];
-
-
-            /* =========================
-               SET NEW STATUS
-            ========================= */
-
-            $new_status =
-                $seller_action === "approve"
-                ? "Approved"
-                : "Rejected";
-
-
-            /* =========================
-               UPDATE SELLER
-            ========================= */
-
-            $stmt = $conn->prepare(
-                "UPDATE users
-                 SET seller_status = ?
-                 WHERE user_id = ?
-                 AND role = 'seller'
-                 AND seller_status = 'Pending'"
-            );
-
-            $stmt->bind_param(
-                "si",
-                $new_status,
+            $seller_stmt->bind_param(
+                "i",
                 $seller_id
             );
 
+            $seller_stmt->execute();
 
-            if ($stmt->execute()) {
-
-                if (
-                    $stmt->affected_rows > 0
-                ) {
-
-                    /* =========================
-                       RECORD ACTIVITY
-                    ========================= */
-
-                    $admin_id =
-                        (int) $_SESSION["user_id"];
-
-                    $action =
-                        $new_status === "Approved"
-                        ? "Seller approved"
-                        : "Seller rejected";
-
-                    $details =
-                        "Admin " .
-                        ($_SESSION["name"] ?? "Unknown Admin") .
-                        " " .
-                        strtolower($new_status) .
-                        " seller " .
-                        $seller_name .
-                        " (Seller ID: " .
-                        $seller_id .
-                        ").";
+            $seller_result =
+                $seller_stmt->get_result();
 
 
-                    $log_stmt = $conn->prepare(
-                        "INSERT INTO activity_logs
-                        (
-                            user_id,
-                            action,
-                            details
-                        )
-                        VALUES (?, ?, ?)"
+            if ($seller_result->num_rows === 1) {
+
+                $seller_data =
+                    $seller_result->fetch_assoc();
+
+                $seller_name =
+                    $seller_data["name"];
+
+
+                /* =========================
+                   UPDATE STATUS
+                ========================= */
+
+                $update_stmt = $conn->prepare(
+                    "UPDATE users
+                     SET seller_status = ?
+                     WHERE user_id = ?
+                     AND role = 'seller'
+                     AND seller_status = 'Pending'"
+                );
+
+
+                if ($update_stmt) {
+
+                    $update_stmt->bind_param(
+                        "si",
+                        $new_status,
+                        $seller_id
                     );
 
-                    if ($log_stmt) {
 
-                        $log_stmt->bind_param(
-                            "iss",
-                            $admin_id,
-                            $action,
-                            $details
-                        );
+                    if ($update_stmt->execute()) {
 
-                        $log_stmt->execute();
+                        if (
+                            $update_stmt->affected_rows > 0
+                        ) {
 
-                    }
+                            /* =========================
+                               ACTIVITY LOG
+                            ========================= */
+
+                            $admin_id =
+                                (int) $_SESSION["user_id"];
+
+                            if ($new_status === "Approved") {
+
+                                $action =
+                                    "Seller approved";
+
+                                $details =
+                                    "Admin " .
+                                    ($_SESSION["name"] ?? "Unknown Admin") .
+                                    " approved seller " .
+                                    $seller_name .
+                                    " (Seller ID: " .
+                                    $seller_id .
+                                    ").";
+
+                            } else {
+
+                                $action =
+                                    "Seller rejected";
+
+                                $details =
+                                    "Admin " .
+                                    ($_SESSION["name"] ?? "Unknown Admin") .
+                                    " rejected seller " .
+                                    $seller_name .
+                                    " (Seller ID: " .
+                                    $seller_id .
+                                    ").";
+                            }
 
 
-                    if (
-                        $new_status === "Approved"
-                    ) {
+                            $log_stmt = $conn->prepare(
+                                "INSERT INTO activity_logs
+                                (
+                                    user_id,
+                                    action,
+                                    details
+                                )
+                                VALUES (?, ?, ?)"
+                            );
 
-                        $message =
-                            "Seller approved successfully.";
+
+                            if ($log_stmt) {
+
+                                $log_stmt->bind_param(
+                                    "iss",
+                                    $admin_id,
+                                    $action,
+                                    $details
+                                );
+
+                                $log_stmt->execute();
+
+                                $log_stmt->close();
+                            }
+
+
+                            if (
+                                $new_status === "Approved"
+                            ) {
+
+                                $message =
+                                    "Seller approved successfully.";
+
+                                $message_type =
+                                    "success";
+
+                            } else {
+
+                                $message =
+                                    "Seller registration rejected.";
+
+                                $message_type =
+                                    "success";
+                            }
+
+                        } else {
+
+                            $message =
+                                "Seller has already been processed.";
+
+                            $message_type =
+                                "error";
+                        }
 
                     } else {
 
                         $message =
-                            "Seller registration rejected.";
+                            "Could not update seller status.";
 
+                        $message_type =
+                            "error";
                     }
+
+
+                    $update_stmt->close();
 
                 } else {
 
                     $message =
-                        "Seller has already been processed.";
+                        "Could not prepare seller update.";
 
+                    $message_type =
+                        "error";
                 }
 
             } else {
 
                 $message =
-                    "Could not update seller status.";
+                    "Seller account was not found.";
 
+                $message_type =
+                    "error";
             }
 
+
+            $seller_stmt->close();
+
+        } else {
+
+            $message =
+                "Could not find seller.";
+
+            $message_type =
+                "error";
         }
-
     }
+}
 
+
+/* =========================
+   SEARCH
+========================= */
+
+$search = "";
+
+if (isset($_GET["search"])) {
+
+    $search =
+        trim($_GET["search"]);
 }
 
 
@@ -203,7 +263,69 @@ if (
    GET SELLERS
 ========================= */
 
-$sql = "SELECT
+if ($search !== "") {
+
+    $search_term =
+        "%" . $search . "%";
+
+
+    $stmt = $conn->prepare(
+        "SELECT
+            user_id,
+            name,
+            email,
+            phone,
+            address,
+            national_id,
+            national_id_image,
+            seller_status,
+            has_shop,
+            shop_name,
+            store_location,
+            created_at
+         FROM users
+         WHERE role = 'seller'
+         AND (
+             name LIKE ?
+             OR email LIKE ?
+             OR phone LIKE ?
+             OR address LIKE ?
+             OR shop_name LIKE ?
+             OR store_location LIKE ?
+             OR seller_status LIKE ?
+         )
+         ORDER BY
+            CASE seller_status
+                WHEN 'Pending' THEN 1
+                WHEN 'Approved' THEN 2
+                WHEN 'Rejected' THEN 3
+                ELSE 4
+            END,
+            user_id DESC"
+    );
+
+
+    $stmt->bind_param(
+        "sssssss",
+        $search_term,
+        $search_term,
+        $search_term,
+        $search_term,
+        $search_term,
+        $search_term,
+        $search_term
+    );
+
+
+    $stmt->execute();
+
+    $result =
+        $stmt->get_result();
+
+} else {
+
+    $sql = "
+        SELECT
             user_id,
             name,
             email,
@@ -225,9 +347,55 @@ $sql = "SELECT
                 WHEN 'Rejected' THEN 3
                 ELSE 4
             END,
-            user_id DESC";
+            user_id DESC
+    ";
 
-$result = $conn->query($sql);
+
+    $result =
+        $conn->query($sql);
+}
+
+
+/* =========================
+   COUNT PENDING
+========================= */
+
+$pending_count = 0;
+
+$pending_result = $conn->query(
+    "SELECT COUNT(*) AS total
+     FROM users
+     WHERE role = 'seller'
+     AND seller_status = 'Pending'"
+);
+
+if ($pending_result) {
+
+    $pending_count =
+        (int) $pending_result
+        ->fetch_assoc()["total"];
+}
+
+
+/* =========================
+   COUNT APPROVED
+========================= */
+
+$approved_count = 0;
+
+$approved_result = $conn->query(
+    "SELECT COUNT(*) AS total
+     FROM users
+     WHERE role = 'seller'
+     AND seller_status = 'Approved'"
+);
+
+if ($approved_result) {
+
+    $approved_count =
+        (int) $approved_result
+        ->fetch_assoc()["total"];
+}
 
 ?>
 
@@ -237,8 +405,15 @@ $result = $conn->query($sql);
 
 <head>
 
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>
-        Seller Management - Gauley Ko Pasal
+        Seller Applications - Gauley Ko Pasal
     </title>
 
     <link
@@ -246,7 +421,550 @@ $result = $conn->query($sql);
         href="../style.css"
     >
 
+    <style>
+
+        /* =========================
+           PAGE
+        ========================= */
+
+        .seller-page {
+            max-width: 1250px;
+            margin: 0 auto;
+        }
+
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        .page-heading {
+            margin-bottom: 25px;
+        }
+
+        .page-heading h2 {
+            margin-bottom: 8px;
+        }
+
+        .page-heading p {
+            color: #666;
+            margin: 0;
+        }
+
+
+        /* =========================
+           SUMMARY
+        ========================= */
+
+        .seller-summary {
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(0, 1fr)
+                );
+
+            gap: 18px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .summary-card {
+            background: white;
+
+            border-radius: 14px;
+
+            padding: 22px;
+
+            border: 1px solid #e5e5e5;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.06);
+        }
+
+
+        .summary-card span {
+            display: block;
+
+            color: #777;
+
+            font-size: 14px;
+
+            margin-bottom: 8px;
+        }
+
+
+        .summary-number {
+            font-size: 30px;
+
+            font-weight: 700;
+
+            color: #222;
+        }
+
+
+        .pending-summary {
+            border-left:
+                5px solid #d89b18;
+        }
+
+
+        .approved-summary {
+            border-left:
+                5px solid #2e8b57;
+        }
+
+
+        /* =========================
+           SEARCH
+        ========================= */
+
+        .search-panel {
+            background: white;
+
+            border-radius: 14px;
+
+            padding: 20px;
+
+            margin-bottom: 25px;
+
+            border: 1px solid #e5e5e5;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.05);
+        }
+
+
+        .search-title {
+            font-weight: 700;
+
+            margin-bottom: 12px;
+        }
+
+
+        .search-form {
+            display: flex;
+
+            gap: 10px;
+
+            align-items: center;
+        }
+
+
+        .search-form input {
+            flex: 1;
+
+            padding: 12px 14px;
+
+            border: 1px solid #ccc;
+
+            border-radius: 8px;
+
+            font-size: 15px;
+
+            box-sizing: border-box;
+        }
+
+
+        .search-form button {
+            padding: 12px 20px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: #222;
+
+            color: white;
+
+            cursor: pointer;
+
+            font-weight: 600;
+        }
+
+
+        .search-form button:hover {
+            opacity: 0.88;
+        }
+
+
+        .clear-button {
+            padding: 12px 18px;
+
+            border-radius: 8px;
+
+            background: #eeeeee;
+
+            color: #222;
+
+            text-decoration: none;
+
+            font-weight: 600;
+        }
+
+
+        /* =========================
+           MESSAGE
+        ========================= */
+
+        .message-box {
+            padding: 15px 18px;
+
+            border-radius: 10px;
+
+            margin-bottom: 20px;
+
+            background: white;
+
+            border: 1px solid #ddd;
+        }
+
+
+        .message-success {
+            border-left:
+                5px solid #2e8b57;
+        }
+
+
+        .message-error {
+            border-left:
+                5px solid #c0392b;
+        }
+
+
+        /* =========================
+           APPLICATION CARD
+        ========================= */
+
+        .applications-panel {
+            background: white;
+
+            border-radius: 14px;
+
+            padding: 25px;
+
+            border: 1px solid #e5e5e5;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.06);
+        }
+
+
+        .applications-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 20px;
+
+            gap: 15px;
+        }
+
+
+        .applications-header h2 {
+            margin: 0;
+        }
+
+
+        .applications-count {
+            background: #f1f1f1;
+
+            padding: 7px 12px;
+
+            border-radius: 20px;
+
+            font-size: 13px;
+
+            font-weight: 600;
+        }
+
+
+        /* =========================
+           TABLE
+        ========================= */
+
+        .seller-table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        .seller-table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 950px;
+        }
+
+
+        .seller-table th {
+            background: #222;
+
+            color: white;
+
+            padding: 14px;
+
+            text-align: left;
+
+            font-size: 13px;
+
+            letter-spacing: 0.2px;
+        }
+
+
+        .seller-table td {
+            padding: 16px 14px;
+
+            border-bottom:
+                1px solid #e8e8e8;
+
+            vertical-align: top;
+
+            font-size: 14px;
+        }
+
+
+        .seller-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+
+        .seller-name {
+            font-weight: 700;
+
+            color: #222;
+
+            margin-bottom: 5px;
+        }
+
+
+        .seller-email {
+            color: #777;
+
+            font-size: 13px;
+        }
+
+
+        .shop-name {
+            font-weight: 700;
+
+            color: #222;
+
+            margin-bottom: 5px;
+        }
+
+
+        .secondary-text {
+            color: #777;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           STATUS
+        ========================= */
+
+        .status-badge {
+            display: inline-block;
+
+            padding: 6px 10px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+
+        .status-pending {
+            background: #fff3cd;
+
+            color: #856404;
+        }
+
+
+        .status-approved {
+            background: #d9f2e3;
+
+            color: #216b3b;
+        }
+
+
+        .status-rejected {
+            background: #f8d7da;
+
+            color: #842029;
+        }
+
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        .action-button {
+            display: inline-block;
+
+            padding: 9px 13px;
+
+            border-radius: 7px;
+
+            border: none;
+
+            text-decoration: none;
+
+            cursor: pointer;
+
+            font-size: 13px;
+
+            font-weight: 600;
+
+            margin-bottom: 7px;
+
+            box-sizing: border-box;
+        }
+
+
+        .approve-button {
+            background: #222;
+
+            color: white;
+
+            width: 100%;
+        }
+
+
+        .approve-button:hover {
+            opacity: 0.85;
+        }
+
+
+        .reject-button {
+            background: #eeeeee;
+
+            color: #222;
+
+            width: 100%;
+        }
+
+
+        .reject-button:hover {
+            background: #dddddd;
+        }
+
+
+        .details-button {
+            background: #841d2d;
+
+            color: white;
+
+            width: 100%;
+
+            text-align: center;
+        }
+
+
+        .details-button:hover {
+            opacity: 0.88;
+        }
+
+
+        .no-action {
+            color: #999;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           EMPTY STATE
+        ========================= */
+
+        .empty-state {
+            text-align: center;
+
+            padding: 50px 20px;
+
+            color: #777;
+        }
+
+
+        .empty-state-icon {
+            font-size: 40px;
+
+            margin-bottom: 10px;
+        }
+
+
+        .empty-state h3 {
+            color: #333;
+
+            margin-bottom: 8px;
+        }
+
+
+        /* =========================
+           BACK BUTTON
+        ========================= */
+
+        .back-link {
+            display: inline-block;
+
+            margin-top: 22px;
+
+            color: #222;
+
+            text-decoration: none;
+
+            font-weight: 600;
+        }
+
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            .seller-summary {
+                grid-template-columns: 1fr;
+            }
+
+
+            .search-form {
+                flex-direction: column;
+
+                align-items: stretch;
+            }
+
+
+            .search-form button,
+            .clear-button {
+                text-align: center;
+            }
+
+
+            .applications-panel {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
@@ -254,8 +972,19 @@ $result = $conn->query($sql);
 <header>
 
     <h1>
-        Gauley Ko Pasal
+
+        <a
+            href="dashboard.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            Gauley Ko Pasal
+        </a>
+
     </h1>
+
 
     <nav>
 
@@ -264,7 +993,11 @@ $result = $conn->query($sql);
         </a>
 
         <a href="sellers.php">
-            Sellers
+            Seller Applications
+        </a>
+
+        <a href="approved_sellers.php">
+            Approved Sellers
         </a>
 
         <a href="users.php">
@@ -284,45 +1017,172 @@ $result = $conn->query($sql);
 </header>
 
 
-<div class="container">
+<div class="container seller-page">
 
 
-    <div class="hero">
+    <!-- =========================
+         PAGE HEADING
+    ========================== -->
+
+    <div class="page-heading">
 
         <h2>
-            Seller Management 🏪
+            Seller Applications 🏪
         </h2>
 
         <p>
-            Review seller registrations and approve
-            or reject applications.
+            Review seller registrations and approve or reject applications.
         </p>
 
     </div>
 
 
+    <!-- =========================
+         MESSAGE
+    ========================== -->
+
     <?php if ($message !== ""): ?>
 
-        <div class="card">
+        <div
+            class="message-box
+            <?php
+            echo $message_type === "success"
+                ? "message-success"
+                : "message-error";
+            ?>"
+        >
 
-            <p>
-                <?php
-                echo htmlspecialchars($message);
-                ?>
-            </p>
+            <?php
+            echo htmlspecialchars($message);
+            ?>
 
         </div>
-
-        <br>
 
     <?php endif; ?>
 
 
-    <div class="card">
+    <!-- =========================
+         SUMMARY
+    ========================== -->
 
-        <h2>
-            Seller Applications
-        </h2>
+    <div class="seller-summary">
+
+
+        <div class="summary-card pending-summary">
+
+            <span>
+                Pending Applications
+            </span>
+
+            <div class="summary-number">
+                <?php
+                echo $pending_count;
+                ?>
+            </div>
+
+        </div>
+
+
+        <div class="summary-card approved-summary">
+
+            <span>
+                Approved Sellers
+            </span>
+
+            <div class="summary-number">
+                <?php
+                echo $approved_count;
+                ?>
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================
+         SEARCH
+    ========================== -->
+
+    <div class="search-panel">
+
+        <div class="search-title">
+            Search Sellers
+        </div>
+
+
+        <form
+            method="GET"
+            class="search-form"
+        >
+
+            <input
+                type="text"
+                name="search"
+                placeholder="Search by seller name, shop, email, phone or location..."
+                value="<?php
+                    echo htmlspecialchars($search);
+                ?>"
+            >
+
+
+            <button type="submit">
+                🔎 Search
+            </button>
+
+
+            <?php if ($search !== ""): ?>
+
+                <a
+                    href="sellers.php"
+                    class="clear-button"
+                >
+                    Clear
+                </a>
+
+            <?php endif; ?>
+
+        </form>
+
+    </div>
+
+
+    <!-- =========================
+         APPLICATIONS
+    ========================== -->
+
+    <div class="applications-panel">
+
+
+        <div class="applications-header">
+
+            <h2>
+                Applications
+            </h2>
+
+
+            <span class="applications-count">
+
+                <?php
+
+                if ($result) {
+
+                    echo $result->num_rows;
+
+                } else {
+
+                    echo "0";
+
+                }
+
+                ?>
+
+                result(s)
+
+            </span>
+
+        </div>
 
 
         <?php if (
@@ -331,320 +1191,432 @@ $result = $conn->query($sql);
         ): ?>
 
 
-            <table>
+            <div class="seller-table-wrapper">
 
-                <thead>
 
-                    <tr>
+                <table class="seller-table">
 
-                        <th>ID</th>
 
-                        <th>Seller</th>
+                    <thead>
 
-                        <th>Contact Information</th>
+                        <tr>
 
-                        <th>National ID</th>
+                            <th>
+                                #
+                            </th>
 
-                        <th>Business Information</th>
+                            <th>
+                                Seller
+                            </th>
 
-                        <th>Status</th>
+                            <th>
+                                Contact
+                            </th>
 
-                        <th>Action</th>
+                            <th>
+                                Shop
+                            </th>
 
-                    </tr>
+                            <th>
+                                Joined
+                            </th>
 
-                </thead>
+                            <th>
+                                Status
+                            </th>
 
+                            <th>
+                                Action
+                            </th>
 
-                <tbody>
+                        </tr>
 
+                    </thead>
 
-                <?php
 
-                $display_number = 1;
-
-                while (
-                    $seller =
-                    $result->fetch_assoc()
-                ):
-
-                ?>
-
-
-                    <tr>
-
-                        <td>
-
-                            <?php
-                            echo $display_number;
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $seller["name"]
-                                );
-                                ?>
-
-                            </strong>
-
-                            <br><br>
-
-                            <strong>Email:</strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["email"]
-                            );
-                            ?>
-
-                            <br><br>
-
-                            <strong>Registered:</strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["created_at"]
-                            );
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-                                Phone:
-                            </strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["phone"] ?? "-"
-                            );
-                            ?>
-
-                            <br><br>
-
-                            <strong>
-                                Address:
-                            </strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["address"] ?? "-"
-                            );
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-                                ID Number:
-                            </strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["national_id"] ?? "-"
-                            );
-                            ?>
-
-                            <br><br>
-
-
-                            <?php if (
-                                !empty(
-                                    $seller["national_id_image"]
-                                )
-                            ): ?>
-
-
-                                <a
-                                    href="../uploads/national_ids/<?php
-                                    echo urlencode(
-                                        $seller[
-                                            "national_id_image"
-                                        ]
-                                    );
-                                    ?>"
-                                    target="_blank"
-                                >
-                                    View National ID Card
-                                </a>
-
-
-                            <?php else: ?>
-
-
-                                No ID image uploaded.
-
-
-                            <?php endif; ?>
-
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-                                Has Shop:
-                            </strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["has_shop"] ?? "-"
-                            );
-                            ?>
-
-                            <br><br>
-
-
-                            <strong>
-                                Shop Name:
-                            </strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                !empty($seller["shop_name"])
-                                ? $seller["shop_name"]
-                                : "-"
-                            );
-                            ?>
-
-                            <br><br>
-
-
-                            <strong>
-                                Operating Location:
-                            </strong>
-
-                            <?php
-                            echo htmlspecialchars(
-                                $seller["store_location"] ?? "-"
-                            );
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $seller["seller_status"]
-                                    ?? "Pending"
-                                );
-                                ?>
-
-                            </strong>
-
-                        </td>
-
-
-                        <td>
-
-
-                            <?php if (
-                                ($seller["seller_status"] ?? "Pending")
-                                === "Pending"
-                            ): ?>
-
-
-                                <form
-                                    method="POST"
-                                    style="margin-bottom: 10px;"
-                                >
-
-                                    <input
-                                        type="hidden"
-                                        name="seller_id"
-                                        value="<?php
-                                        echo (int)
-                                            $seller["user_id"];
-                                        ?>"
-                                    >
-
-
-                                    <button
-                                        type="submit"
-                                        name="seller_action"
-                                        value="approve"
-                                        onclick="return confirm('Approve this seller?');"
-                                    >
-                                        Approve
-                                    </button>
-
-                                </form>
-
-
-                                <form method="POST">
-
-                                    <input
-                                        type="hidden"
-                                        name="seller_id"
-                                        value="<?php
-                                        echo (int)
-                                            $seller["user_id"];
-                                        ?>"
-                                    >
-
-
-                                    <button
-                                        type="submit"
-                                        name="seller_action"
-                                        value="reject"
-                                        onclick="return confirm('Reject this seller registration?');"
-                                    >
-                                        Reject
-                                    </button>
-
-                                </form>
-
-
-                            <?php else: ?>
-
-
-                                No pending action.
-
-
-                            <?php endif; ?>
-
-
-                        </td>
-
-                    </tr>
+                    <tbody>
 
 
                     <?php
 
-                    $display_number++;
+                    $display_number = 1;
+
+                    while (
+                        $seller =
+                        $result->fetch_assoc()
+                    ):
+
+                        $status =
+                            $seller["seller_status"];
+
+                        if (
+                            empty($status)
+                        ) {
+
+                            $status =
+                                "Pending";
+                        }
+
+                    ?>
+
+
+                        <tr>
+
+
+                            <!-- NUMBER -->
+
+                            <td>
+
+                                <?php
+                                echo $display_number;
+                                ?>
+
+                            </td>
+
+
+                            <!-- SELLER -->
+
+                            <td>
+
+                                <div class="seller-name">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $seller["name"]
+                                    );
+                                    ?>
+
+                                </div>
+
+
+                                <div class="seller-email">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $seller["email"]
+                                    );
+                                    ?>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- CONTACT -->
+
+                            <td>
+
+                                <div>
+
+                                    <strong>
+                                        Phone
+                                    </strong>
+
+                                    <br>
+
+                                    <span class="secondary-text">
+
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $seller["phone"] ?? "-"
+                                        );
+                                        ?>
+
+                                    </span>
+
+                                </div>
+
+
+                                <br>
+
+
+                                <div>
+
+                                    <strong>
+                                        Address
+                                    </strong>
+
+                                    <br>
+
+                                    <span class="secondary-text">
+
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $seller["address"] ?? "-"
+                                        );
+                                        ?>
+
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- SHOP -->
+
+                            <td>
+
+                                <div class="shop-name">
+
+                                    <?php
+
+                                    if (
+                                        !empty(
+                                            $seller["shop_name"]
+                                        )
+                                    ) {
+
+                                        echo htmlspecialchars(
+                                            $seller["shop_name"]
+                                        );
+
+                                    } else {
+
+                                        echo "No shop name";
+
+                                    }
+
+                                    ?>
+
+                                </div>
+
+
+                                <div class="secondary-text">
+
+                                    <?php
+
+                                    if (
+                                        !empty(
+                                            $seller["store_location"]
+                                        )
+                                    ) {
+
+                                        echo htmlspecialchars(
+                                            $seller["store_location"]
+                                        );
+
+                                    } else {
+
+                                        echo "Location not provided";
+
+                                    }
+
+                                    ?>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- JOINED -->
+
+                            <td>
+
+                                <span class="secondary-text">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $seller["created_at"] ?? "-"
+                                    );
+                                    ?>
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- STATUS -->
+
+                            <td>
+
+
+                                <?php if (
+                                    $status === "Approved"
+                                ): ?>
+
+                                    <span
+                                        class="status-badge status-approved"
+                                    >
+                                        Approved
+                                    </span>
+
+
+                                <?php elseif (
+                                    $status === "Rejected"
+                                ): ?>
+
+                                    <span
+                                        class="status-badge status-rejected"
+                                    >
+                                        Rejected
+                                    </span>
+
+
+                                <?php else: ?>
+
+                                    <span
+                                        class="status-badge status-pending"
+                                    >
+                                        Pending
+                                    </span>
+
+                                <?php endif; ?>
+
+
+                            </td>
+
+
+                            <!-- ACTION -->
+
+                            <td>
+
+
+                                <?php if (
+                                    $status === "Pending"
+                                ): ?>
+
+
+                                    <form
+                                        method="POST"
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="seller_id"
+                                            value="<?php
+                                                echo (int)
+                                                    $seller["user_id"];
+                                            ?>"
+                                        >
+
+
+                                        <button
+                                            type="submit"
+                                            name="seller_action"
+                                            value="approve"
+                                            class="action-button approve-button"
+                                            onclick="return confirm('Approve this seller?');"
+                                        >
+                                            ✓ Approve
+                                        </button>
+
+                                    </form>
+
+
+                                    <form
+                                        method="POST"
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="seller_id"
+                                            value="<?php
+                                                echo (int)
+                                                    $seller["user_id"];
+                                            ?>"
+                                        >
+
+
+                                        <button
+                                            type="submit"
+                                            name="seller_action"
+                                            value="reject"
+                                            class="action-button reject-button"
+                                            onclick="return confirm('Reject this seller registration?');"
+                                        >
+                                            ✕ Reject
+                                        </button>
+
+                                    </form>
+
+
+                                <?php elseif (
+                                    $status === "Approved"
+                                ): ?>
+
+
+                                    <a
+                                        href="seller_details.php?id=<?php
+                                            echo (int)
+                                                $seller["user_id"];
+                                        ?>"
+                                        class="action-button details-button"
+                                    >
+                                        View Details
+                                    </a>
+
+
+                                <?php else: ?>
+
+
+                                    <span class="no-action">
+                                        Application rejected
+                                    </span>
+
+
+                                <?php endif; ?>
+
+
+                            </td>
+
+
+                        </tr>
+
+
+                    <?php
+
+                        $display_number++;
 
                     endwhile;
 
                     ?>
 
 
-                </tbody>
+                    </tbody>
 
-            </table>
+
+                </table>
+
+
+            </div>
 
 
         <?php else: ?>
 
 
-            <p>
-                No seller applications found.
-            </p>
+            <div class="empty-state">
+
+                <div class="empty-state-icon">
+                    🏪
+                </div>
+
+
+                <h3>
+                    No Sellers Found
+                </h3>
+
+
+                <p>
+
+                    <?php if (
+                        $search !== ""
+                    ): ?>
+
+                        No sellers matched
+                        "<strong><?php
+                            echo htmlspecialchars($search);
+                        ?></strong>".
+
+                    <?php else: ?>
+
+                        There are currently no seller applications.
+
+                    <?php endif; ?>
+
+                </p>
+
+            </div>
 
 
         <?php endif; ?>
@@ -653,10 +1625,10 @@ $result = $conn->query($sql);
     </div>
 
 
-    <br>
-
-
-    <a href="dashboard.php">
+    <a
+        href="dashboard.php"
+        class="back-link"
+    >
         ← Back to Dashboard
     </a>
 
@@ -667,8 +1639,7 @@ $result = $conn->query($sql);
 <footer>
 
     <p>
-        Gauley Ko Pasal —
-        Admin Panel 🇳🇵
+        Gauley Ko Pasal — Admin Panel 🇳🇵
     </p>
 
 </footer>
@@ -677,4 +1648,3 @@ $result = $conn->query($sql);
 </body>
 
 </html>
-```

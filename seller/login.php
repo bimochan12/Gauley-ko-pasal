@@ -74,13 +74,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <link rel="stylesheet" href="../style.css">
 
+    <style>
+
+        .site-logo {
+
+            color: inherit;
+
+            text-decoration: none;
+
+            cursor: pointer;
+
+        }
+
+        .site-logo:hover {
+
+            text-decoration: underline;
+
+        }
+
+    </style>
+
 </head>
 
 <body>
 
 <header>
 
-    <h1>Gauley Ko Pasal</h1>
+    <h1>
+
+        <a
+            href="../index.php"
+            class="site-logo"
+        >
+            Gauley Ko Pasal
+        </a>
+
+    </h1>
 
 </header>
 
@@ -143,11 +172,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <br>
 
         <p>
+
             Want to become a seller?
 
             <a href="register.php">
                 Register as Seller
             </a>
+
         </p>
 
     </div>

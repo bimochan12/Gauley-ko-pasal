@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -159,6 +158,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         href="../style.css"
     >
 
+    <style>
+
+        /* Clickable Gauley Ko Pasal logo */
+
+        .site-logo {
+
+            color: inherit;
+
+            text-decoration: none;
+
+            cursor: pointer;
+
+        }
+
+        .site-logo:hover {
+
+            text-decoration: underline;
+
+        }
+
+    </style>
+
 </head>
 
 <body>
@@ -166,9 +187,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <header>
 
+    <!-- CLICKABLE GAULEY KO PASAL -->
+
     <h1>
-        Gauley Ko Pasal
+
+        <a
+            href="../index.php"
+            class="site-logo"
+        >
+            Gauley Ko Pasal
+        </a>
+
     </h1>
+
 
     <nav>
 
@@ -272,4 +303,3 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </body>
 
 </html>
-```
