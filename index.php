@@ -5,6 +5,7 @@ session_start();
 ?>
 
 <!DOCTYPE html>
+
 <html>
 
 <head>
@@ -30,9 +31,9 @@ session_start();
 
 </header>
 
+
 <div class="container">
 
-    
 
     <div class="hero">
 
@@ -47,16 +48,16 @@ session_start();
 
     </div>
 
-    
 
     <div class="products">
 
-        
+
+        <!-- CUSTOMER -->
 
         <div class="product-card">
 
             <h3>
-                 Customer
+                Customer
             </h3>
 
             <p>
@@ -91,12 +92,13 @@ session_start();
 
         </div>
 
-        
+
+        <!-- SELLER -->
 
         <div class="product-card">
 
             <h3>
-                 Seller
+                Seller
             </h3>
 
             <p>
@@ -123,12 +125,13 @@ session_start();
 
         </div>
 
-        
+
+        <!-- ADMIN -->
 
         <div class="product-card">
 
             <h3>
-                 Admin
+                Admin
             </h3>
 
             <p>
@@ -146,9 +149,11 @@ session_start();
 
         </div>
 
+
     </div>
 
-    
+
+    <!-- LOGGED-IN USER -->
 
     <?php if (isset($_SESSION["user_id"])): ?>
 
@@ -167,16 +172,20 @@ session_start();
                 <strong>
 
                     <?php
+
                     echo htmlspecialchars(
-                        $_SESSION["name"]
+                        $_SESSION["name"] ?? "User"
                     );
+
                     ?>
 
                 </strong>
 
             </p>
 
+
             <?php if (
+                isset($_SESSION["role"]) &&
                 $_SESSION["role"] === "customer"
             ): ?>
 
@@ -187,7 +196,9 @@ session_start();
                     Go to Store
                 </a>
 
+
             <?php elseif (
+                isset($_SESSION["role"]) &&
                 $_SESSION["role"] === "seller"
             ): ?>
 
@@ -198,7 +209,9 @@ session_start();
                     Go to Seller Dashboard
                 </a>
 
+
             <?php elseif (
+                isset($_SESSION["role"]) &&
                 $_SESSION["role"] === "admin"
             ): ?>
 
@@ -211,11 +224,14 @@ session_start();
 
             <?php endif; ?>
 
+
         </div>
 
     <?php endif; ?>
 
+
 </div>
+
 
 <footer>
 
@@ -224,6 +240,7 @@ session_start();
     </p>
 
 </footer>
+
 
 </body>
 
