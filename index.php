@@ -132,8 +132,7 @@ session_start();
             </h3>
 
             <p>
-                Manage products, orders,
-                users and seller applications.
+                Manage users and seller applications.
             </p>
 
             <br>
