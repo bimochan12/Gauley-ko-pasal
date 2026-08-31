@@ -18,18 +18,12 @@ $seller_id = (int) $_SESSION["user_id"];
 
 $message = "";
 
-
-/* =========================
-   SUCCESS / ERROR MESSAGE
-========================= */
-
 if (
     isset($_GET["success"]) &&
     $_GET["success"] === "status_updated"
 ) {
     $message = "Product order status updated successfully.";
 }
-
 
 if (isset($_GET["error"])) {
 
@@ -56,12 +50,6 @@ if (isset($_GET["error"])) {
     }
 
 }
-
-
-/* =========================
-   ACTIVE ORDER ITEMS
-   ONLY THIS SELLER'S PRODUCTS
-========================= */
 
 $sql = "
     SELECT
@@ -99,7 +87,6 @@ $sql = "
         orders.order_date DESC,
         order_items.order_item_id DESC
 ";
-
 
 $stmt = $conn->prepare($sql);
 
@@ -164,9 +151,7 @@ $result = $stmt->get_result();
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -179,7 +164,6 @@ $result = $stmt->get_result();
         </p>
 
     </div>
-
 
     <?php if ($message !== ""): ?>
 
@@ -199,7 +183,6 @@ $result = $stmt->get_result();
 
     <?php endif; ?>
 
-
     <?php if (
         !$result ||
         $result->num_rows === 0
@@ -218,20 +201,16 @@ $result = $stmt->get_result();
 
         </div>
 
-
     <?php else: ?>
-
 
         <?php while (
             $item = $result->fetch_assoc()
         ): ?>
 
-
             <div
                 class="card"
                 style="margin-bottom: 20px;"
             >
-
 
                 <h2>
 
@@ -242,7 +221,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </h2>
-
 
                 <p>
 
@@ -257,7 +235,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <?php if (
                     !empty($item["image"])
@@ -285,7 +262,6 @@ $result = $stmt->get_result();
 
                 <?php endif; ?>
 
-
                 <p>
 
                     <strong>
@@ -297,7 +273,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -316,7 +291,6 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <p>
 
                     <strong>
@@ -330,7 +304,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -346,7 +319,6 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <p>
 
                     <strong>
@@ -360,7 +332,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -376,7 +347,6 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <form
                     method="POST"
                     action="update_order.php"
@@ -391,11 +361,9 @@ $result = $stmt->get_result();
                         ?>"
                     >
 
-
                     <label>
                         Change Status
                     </label>
-
 
                     <select
                         name="status"
@@ -416,7 +384,6 @@ $result = $stmt->get_result();
                             Pending
                         </option>
 
-
                         <option
                             value="Processing"
                             <?php
@@ -431,11 +398,9 @@ $result = $stmt->get_result();
                             Processing
                         </option>
 
-
                         <option value="Delivered">
                             Delivered
                         </option>
-
 
                         <option value="Cancelled">
                             Cancelled
@@ -443,9 +408,7 @@ $result = $stmt->get_result();
 
                     </select>
 
-
                     <br><br>
-
 
                     <button type="submit">
                         Update Product Status
@@ -453,18 +416,13 @@ $result = $stmt->get_result();
 
                 </form>
 
-
             </div>
-
 
         <?php endwhile; ?>
 
-
     <?php endif; ?>
 
-
 </div>
-
 
 <footer>
 
@@ -474,8 +432,8 @@ $result = $stmt->get_result();
 
 </footer>
 
-
 </body>
 
 </html>
 ```
+

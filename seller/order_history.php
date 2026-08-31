@@ -16,13 +16,6 @@ require_once "../config/database.php";
 
 $seller_id = (int) $_SESSION["user_id"];
 
-
-/* =========================
-   ORDER HISTORY
-   ONLY THIS SELLER'S
-   COMPLETED ORDER ITEMS
-========================= */
-
 $sql = "
     SELECT
         orders.order_id,
@@ -61,7 +54,6 @@ $sql = "
         order_items.order_item_id DESC
 ";
 
-
 $stmt = $conn->prepare($sql);
 
 $stmt->bind_param(
@@ -92,7 +84,6 @@ $result = $stmt->get_result();
 </head>
 
 <body>
-
 
 <header>
 
@@ -126,9 +117,7 @@ $result = $stmt->get_result();
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -143,12 +132,10 @@ $result = $stmt->get_result();
 
     </div>
 
-
     <?php if (
         !$result ||
         $result->num_rows === 0
     ): ?>
-
 
         <div class="card">
 
@@ -163,20 +150,16 @@ $result = $stmt->get_result();
 
         </div>
 
-
     <?php else: ?>
-
 
         <?php while (
             $item = $result->fetch_assoc()
         ): ?>
 
-
             <div
                 class="card"
                 style="margin-bottom: 20px;"
             >
-
 
                 <h2>
 
@@ -188,7 +171,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </h2>
-
 
                 <p>
 
@@ -204,11 +186,9 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <?php if (
                     !empty($item["image"])
                 ): ?>
-
 
                     <img
                         src="../uploads/<?php
@@ -230,9 +210,7 @@ $result = $stmt->get_result();
 
                     <br><br>
 
-
                 <?php endif; ?>
-
 
                 <p>
 
@@ -246,7 +224,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -265,7 +242,6 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <p>
 
                     <strong>
@@ -279,7 +255,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -295,7 +270,6 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <p>
 
                     <strong>
@@ -309,7 +283,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -325,7 +298,6 @@ $result = $stmt->get_result();
 
                 </p>
 
-
                 <p>
 
                     This product order is completed
@@ -333,18 +305,13 @@ $result = $stmt->get_result();
 
                 </p>
 
-
             </div>
-
 
         <?php endwhile; ?>
 
-
     <?php endif; ?>
 
-
 </div>
-
 
 <footer>
 
@@ -354,8 +321,8 @@ $result = $stmt->get_result();
 
 </footer>
 
-
 </body>
 
 </html>
 ```
+

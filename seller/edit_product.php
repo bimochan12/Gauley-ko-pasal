@@ -16,18 +16,13 @@ require_once "../config/database.php";
 $seller_id = $_SESSION["user_id"];
 $message = "";
 
-
 if (!isset($_GET["id"])) {
 
     header("Location: products.php");
     exit();
 }
 
-
 $product_id = (int) $_GET["id"];
-
-
-/* GET PRODUCT — ONLY IF IT BELONGS TO THIS SELLER */
 
 $sql = "SELECT *
         FROM products
@@ -46,27 +41,19 @@ $stmt->execute();
 
 $result = $stmt->get_result();
 
-
 if ($result->num_rows !== 1) {
 
     header("Location: products.php");
     exit();
 }
 
-
 $product = $result->fetch_assoc();
-
-
-/* GET CATEGORIES */
 
 $category_sql = "SELECT category_id, category_name
                  FROM categories
                  ORDER BY category_name ASC";
 
 $category_result = $conn->query($category_sql);
-
-
-/* UPDATE PRODUCT */
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -78,8 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $image_name = $product["image"];
 
-
-    /* NEW IMAGE */
+    
 
     if (
         isset($_FILES["image"]) &&
@@ -93,7 +79,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         ];
 
         $file_type = $_FILES["image"]["type"];
-
 
         if (in_array($file_type, $allowed_types)) {
 
@@ -109,7 +94,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $upload_path =
                 "../uploads/" . $new_image_name;
-
 
             if (
                 move_uploaded_file(
@@ -129,7 +113,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         }
     }
-
 
     if ($message === "") {
 
@@ -158,7 +141,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $product_id,
             $seller_id
         );
-
 
         if ($update_stmt->execute()) {
 
@@ -204,7 +186,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -217,7 +198,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </div>
 
-
     <div class="card">
 
         <?php if ($message !== ""): ?>
@@ -227,7 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </p>
 
         <?php endif; ?>
-
 
         <form
             method="POST"
@@ -249,7 +228,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>Description</label>
 
             <textarea
@@ -262,7 +240,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ?></textarea>
 
             <br><br>
-
 
             <label>Price</label>
 
@@ -281,7 +258,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>Quantity</label>
 
             <input
@@ -297,7 +273,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             >
 
             <br><br>
-
 
             <label>Category</label>
 
@@ -339,7 +314,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <?php if (!empty($product["image"])): ?>
 
                 <p>
@@ -364,7 +338,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <?php endif; ?>
 
-
             <label>Change Image (optional)</label>
 
             <input
@@ -375,11 +348,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <button type="submit">
                 Update Product
             </button>
-
 
             <a
                 class="button"
@@ -393,7 +364,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
 </div>
-
 
 <footer>
 

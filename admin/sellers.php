@@ -4,11 +4,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -18,14 +13,8 @@ if (
     exit();
 }
 
-
 $message = "";
 $message_type = "";
-
-
-/* =========================
-   APPROVE / REJECT SELLER
-========================= */
 
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
@@ -35,7 +24,6 @@ if (
 
     $seller_id = (int) $_POST["seller_id"];
     $seller_action = $_POST["seller_action"];
-
 
     if (
         $seller_action === "approve" ||
@@ -47,10 +35,7 @@ if (
             ? "Approved"
             : "Rejected";
 
-
-        /* =========================
-           GET SELLER
-        ========================= */
+        
 
         $seller_stmt = $conn->prepare(
             "SELECT name
@@ -58,7 +43,6 @@ if (
              WHERE user_id = ?
              AND role = 'seller'"
         );
-
 
         if ($seller_stmt) {
 
@@ -72,7 +56,6 @@ if (
             $seller_result =
                 $seller_stmt->get_result();
 
-
             if ($seller_result->num_rows === 1) {
 
                 $seller_data =
@@ -81,10 +64,7 @@ if (
                 $seller_name =
                     $seller_data["name"];
 
-
-                /* =========================
-                   UPDATE STATUS
-                ========================= */
+                
 
                 $update_stmt = $conn->prepare(
                     "UPDATE users
@@ -94,7 +74,6 @@ if (
                      AND seller_status = 'Pending'"
                 );
 
-
                 if ($update_stmt) {
 
                     $update_stmt->bind_param(
@@ -103,16 +82,13 @@ if (
                         $seller_id
                     );
 
-
                     if ($update_stmt->execute()) {
 
                         if (
                             $update_stmt->affected_rows > 0
                         ) {
 
-                            /* =========================
-                               ACTIVITY LOG
-                            ========================= */
+                            
 
                             $admin_id =
                                 (int) $_SESSION["user_id"];
@@ -146,7 +122,6 @@ if (
                                     ").";
                             }
 
-
                             $log_stmt = $conn->prepare(
                                 "INSERT INTO activity_logs
                                 (
@@ -156,7 +131,6 @@ if (
                                 )
                                 VALUES (?, ?, ?)"
                             );
-
 
                             if ($log_stmt) {
 
@@ -171,7 +145,6 @@ if (
 
                                 $log_stmt->close();
                             }
-
 
                             if (
                                 $new_status === "Approved"
@@ -210,7 +183,6 @@ if (
                             "error";
                     }
 
-
                     $update_stmt->close();
 
                 } else {
@@ -231,7 +203,6 @@ if (
                     "error";
             }
 
-
             $seller_stmt->close();
 
         } else {
@@ -245,11 +216,6 @@ if (
     }
 }
 
-
-/* =========================
-   SEARCH
-========================= */
-
 $search = "";
 
 if (isset($_GET["search"])) {
@@ -258,16 +224,10 @@ if (isset($_GET["search"])) {
         trim($_GET["search"]);
 }
 
-
-/* =========================
-   GET SELLERS
-========================= */
-
 if ($search !== "") {
 
     $search_term =
         "%" . $search . "%";
-
 
     $stmt = $conn->prepare(
         "SELECT
@@ -304,7 +264,6 @@ if ($search !== "") {
             user_id DESC"
     );
 
-
     $stmt->bind_param(
         "sssssss",
         $search_term,
@@ -315,7 +274,6 @@ if ($search !== "") {
         $search_term,
         $search_term
     );
-
 
     $stmt->execute();
 
@@ -350,15 +308,9 @@ if ($search !== "") {
             user_id DESC
     ";
 
-
     $result =
         $conn->query($sql);
 }
-
-
-/* =========================
-   COUNT PENDING
-========================= */
 
 $pending_count = 0;
 
@@ -375,11 +327,6 @@ if ($pending_result) {
         (int) $pending_result
         ->fetch_assoc()["total"];
 }
-
-
-/* =========================
-   COUNT APPROVED
-========================= */
 
 $approved_count = 0;
 
@@ -423,19 +370,14 @@ if ($approved_result) {
 
     <style>
 
-        /* =========================
-           PAGE
-        ========================= */
+        
 
         .seller-page {
             max-width: 1250px;
             margin: 0 auto;
         }
 
-
-        /* =========================
-           HEADER
-        ========================= */
+        
 
         .page-heading {
             margin-bottom: 25px;
@@ -450,10 +392,7 @@ if ($approved_result) {
             margin: 0;
         }
 
-
-        /* =========================
-           SUMMARY
-        ========================= */
+        
 
         .seller-summary {
             display: grid;
@@ -467,7 +406,6 @@ if ($approved_result) {
 
             margin-bottom: 25px;
         }
-
 
         .summary-card {
             background: white;
@@ -483,7 +421,6 @@ if ($approved_result) {
                 rgba(0,0,0,0.06);
         }
 
-
         .summary-card span {
             display: block;
 
@@ -494,7 +431,6 @@ if ($approved_result) {
             margin-bottom: 8px;
         }
 
-
         .summary-number {
             font-size: 30px;
 
@@ -503,22 +439,17 @@ if ($approved_result) {
             color: #222;
         }
 
-
         .pending-summary {
             border-left:
                 5px solid #d89b18;
         }
-
 
         .approved-summary {
             border-left:
                 5px solid #2e8b57;
         }
 
-
-        /* =========================
-           SEARCH
-        ========================= */
+        
 
         .search-panel {
             background: white;
@@ -536,13 +467,11 @@ if ($approved_result) {
                 rgba(0,0,0,0.05);
         }
 
-
         .search-title {
             font-weight: 700;
 
             margin-bottom: 12px;
         }
-
 
         .search-form {
             display: flex;
@@ -551,7 +480,6 @@ if ($approved_result) {
 
             align-items: center;
         }
-
 
         .search-form input {
             flex: 1;
@@ -566,7 +494,6 @@ if ($approved_result) {
 
             box-sizing: border-box;
         }
-
 
         .search-form button {
             padding: 12px 20px;
@@ -584,11 +511,9 @@ if ($approved_result) {
             font-weight: 600;
         }
 
-
         .search-form button:hover {
             opacity: 0.88;
         }
-
 
         .clear-button {
             padding: 12px 18px;
@@ -604,10 +529,7 @@ if ($approved_result) {
             font-weight: 600;
         }
 
-
-        /* =========================
-           MESSAGE
-        ========================= */
+        
 
         .message-box {
             padding: 15px 18px;
@@ -621,22 +543,17 @@ if ($approved_result) {
             border: 1px solid #ddd;
         }
 
-
         .message-success {
             border-left:
                 5px solid #2e8b57;
         }
-
 
         .message-error {
             border-left:
                 5px solid #c0392b;
         }
 
-
-        /* =========================
-           APPLICATION CARD
-        ========================= */
+        
 
         .applications-panel {
             background: white;
@@ -652,7 +569,6 @@ if ($approved_result) {
                 rgba(0,0,0,0.06);
         }
 
-
         .applications-header {
             display: flex;
 
@@ -665,11 +581,9 @@ if ($approved_result) {
             gap: 15px;
         }
 
-
         .applications-header h2 {
             margin: 0;
         }
-
 
         .applications-count {
             background: #f1f1f1;
@@ -683,15 +597,11 @@ if ($approved_result) {
             font-weight: 600;
         }
 
-
-        /* =========================
-           TABLE
-        ========================= */
+        
 
         .seller-table-wrapper {
             overflow-x: auto;
         }
-
 
         .seller-table {
             width: 100%;
@@ -700,7 +610,6 @@ if ($approved_result) {
 
             min-width: 950px;
         }
-
 
         .seller-table th {
             background: #222;
@@ -716,7 +625,6 @@ if ($approved_result) {
             letter-spacing: 0.2px;
         }
 
-
         .seller-table td {
             padding: 16px 14px;
 
@@ -728,11 +636,9 @@ if ($approved_result) {
             font-size: 14px;
         }
 
-
         .seller-table tbody tr:hover {
             background: #fafafa;
         }
-
 
         .seller-name {
             font-weight: 700;
@@ -742,13 +648,11 @@ if ($approved_result) {
             margin-bottom: 5px;
         }
 
-
         .seller-email {
             color: #777;
 
             font-size: 13px;
         }
-
 
         .shop-name {
             font-weight: 700;
@@ -758,17 +662,13 @@ if ($approved_result) {
             margin-bottom: 5px;
         }
 
-
         .secondary-text {
             color: #777;
 
             font-size: 13px;
         }
 
-
-        /* =========================
-           STATUS
-        ========================= */
+        
 
         .status-badge {
             display: inline-block;
@@ -782,13 +682,11 @@ if ($approved_result) {
             font-weight: 700;
         }
 
-
         .status-pending {
             background: #fff3cd;
 
             color: #856404;
         }
-
 
         .status-approved {
             background: #d9f2e3;
@@ -796,17 +694,13 @@ if ($approved_result) {
             color: #216b3b;
         }
 
-
         .status-rejected {
             background: #f8d7da;
 
             color: #842029;
         }
 
-
-        /* =========================
-           BUTTONS
-        ========================= */
+        
 
         .action-button {
             display: inline-block;
@@ -830,7 +724,6 @@ if ($approved_result) {
             box-sizing: border-box;
         }
 
-
         .approve-button {
             background: #222;
 
@@ -839,11 +732,9 @@ if ($approved_result) {
             width: 100%;
         }
 
-
         .approve-button:hover {
             opacity: 0.85;
         }
-
 
         .reject-button {
             background: #eeeeee;
@@ -853,11 +744,9 @@ if ($approved_result) {
             width: 100%;
         }
 
-
         .reject-button:hover {
             background: #dddddd;
         }
-
 
         .details-button {
             background: #841d2d;
@@ -869,11 +758,9 @@ if ($approved_result) {
             text-align: center;
         }
 
-
         .details-button:hover {
             opacity: 0.88;
         }
-
 
         .no-action {
             color: #999;
@@ -881,10 +768,7 @@ if ($approved_result) {
             font-size: 13px;
         }
 
-
-        /* =========================
-           EMPTY STATE
-        ========================= */
+        
 
         .empty-state {
             text-align: center;
@@ -894,13 +778,11 @@ if ($approved_result) {
             color: #777;
         }
 
-
         .empty-state-icon {
             font-size: 40px;
 
             margin-bottom: 10px;
         }
-
 
         .empty-state h3 {
             color: #333;
@@ -908,10 +790,7 @@ if ($approved_result) {
             margin-bottom: 8px;
         }
 
-
-        /* =========================
-           BACK BUTTON
-        ========================= */
+        
 
         .back-link {
             display: inline-block;
@@ -925,15 +804,11 @@ if ($approved_result) {
             font-weight: 600;
         }
 
-
         .back-link:hover {
             text-decoration: underline;
         }
 
-
-        /* =========================
-           MOBILE
-        ========================= */
+        
 
         @media (max-width: 700px) {
 
@@ -941,19 +816,16 @@ if ($approved_result) {
                 grid-template-columns: 1fr;
             }
 
-
             .search-form {
                 flex-direction: column;
 
                 align-items: stretch;
             }
 
-
             .search-form button,
             .clear-button {
                 text-align: center;
             }
-
 
             .applications-panel {
                 padding: 15px;
@@ -965,9 +837,7 @@ if ($approved_result) {
 
 </head>
 
-
 <body>
-
 
 <header>
 
@@ -984,7 +854,6 @@ if ($approved_result) {
         </a>
 
     </h1>
-
 
     <nav>
 
@@ -1016,13 +885,9 @@ if ($approved_result) {
 
 </header>
 
-
 <div class="container seller-page">
 
-
-    <!-- =========================
-         PAGE HEADING
-    ========================== -->
+    
 
     <div class="page-heading">
 
@@ -1036,10 +901,7 @@ if ($approved_result) {
 
     </div>
 
-
-    <!-- =========================
-         MESSAGE
-    ========================== -->
+    
 
     <?php if ($message !== ""): ?>
 
@@ -1060,13 +922,9 @@ if ($approved_result) {
 
     <?php endif; ?>
 
-
-    <!-- =========================
-         SUMMARY
-    ========================== -->
+    
 
     <div class="seller-summary">
-
 
         <div class="summary-card pending-summary">
 
@@ -1082,7 +940,6 @@ if ($approved_result) {
 
         </div>
 
-
         <div class="summary-card approved-summary">
 
             <span>
@@ -1097,20 +954,15 @@ if ($approved_result) {
 
         </div>
 
-
     </div>
 
-
-    <!-- =========================
-         SEARCH
-    ========================== -->
+    
 
     <div class="search-panel">
 
         <div class="search-title">
             Search Sellers
         </div>
-
 
         <form
             method="GET"
@@ -1126,11 +978,9 @@ if ($approved_result) {
                 ?>"
             >
 
-
             <button type="submit">
                 🔎 Search
             </button>
-
 
             <?php if ($search !== ""): ?>
 
@@ -1147,20 +997,15 @@ if ($approved_result) {
 
     </div>
 
-
-    <!-- =========================
-         APPLICATIONS
-    ========================== -->
+    
 
     <div class="applications-panel">
-
 
         <div class="applications-header">
 
             <h2>
                 Applications
             </h2>
-
 
             <span class="applications-count">
 
@@ -1184,18 +1029,14 @@ if ($approved_result) {
 
         </div>
 
-
         <?php if (
             $result &&
             $result->num_rows > 0
         ): ?>
 
-
             <div class="seller-table-wrapper">
 
-
                 <table class="seller-table">
-
 
                     <thead>
 
@@ -1233,9 +1074,7 @@ if ($approved_result) {
 
                     </thead>
 
-
                     <tbody>
-
 
                     <?php
 
@@ -1259,11 +1098,9 @@ if ($approved_result) {
 
                     ?>
 
-
                         <tr>
 
-
-                            <!-- NUMBER -->
+                            
 
                             <td>
 
@@ -1273,8 +1110,7 @@ if ($approved_result) {
 
                             </td>
 
-
-                            <!-- SELLER -->
+                            
 
                             <td>
 
@@ -1288,7 +1124,6 @@ if ($approved_result) {
 
                                 </div>
 
-
                                 <div class="seller-email">
 
                                     <?php
@@ -1301,8 +1136,7 @@ if ($approved_result) {
 
                             </td>
 
-
-                            <!-- CONTACT -->
+                            
 
                             <td>
 
@@ -1326,9 +1160,7 @@ if ($approved_result) {
 
                                 </div>
 
-
                                 <br>
-
 
                                 <div>
 
@@ -1352,8 +1184,7 @@ if ($approved_result) {
 
                             </td>
 
-
-                            <!-- SHOP -->
+                            
 
                             <td>
 
@@ -1381,7 +1212,6 @@ if ($approved_result) {
 
                                 </div>
 
-
                                 <div class="secondary-text">
 
                                     <?php
@@ -1408,8 +1238,7 @@ if ($approved_result) {
 
                             </td>
 
-
-                            <!-- JOINED -->
+                            
 
                             <td>
 
@@ -1425,11 +1254,9 @@ if ($approved_result) {
 
                             </td>
 
-
-                            <!-- STATUS -->
+                            
 
                             <td>
-
 
                                 <?php if (
                                     $status === "Approved"
@@ -1441,7 +1268,6 @@ if ($approved_result) {
                                         Approved
                                     </span>
 
-
                                 <?php elseif (
                                     $status === "Rejected"
                                 ): ?>
@@ -1451,7 +1277,6 @@ if ($approved_result) {
                                     >
                                         Rejected
                                     </span>
-
 
                                 <?php else: ?>
 
@@ -1463,19 +1288,15 @@ if ($approved_result) {
 
                                 <?php endif; ?>
 
-
                             </td>
 
-
-                            <!-- ACTION -->
+                            
 
                             <td>
-
 
                                 <?php if (
                                     $status === "Pending"
                                 ): ?>
-
 
                                     <form
                                         method="POST"
@@ -1489,7 +1310,6 @@ if ($approved_result) {
                                                     $seller["user_id"];
                                             ?>"
                                         >
-
 
                                         <button
                                             type="submit"
@@ -1503,7 +1323,6 @@ if ($approved_result) {
 
                                     </form>
 
-
                                     <form
                                         method="POST"
                                     >
@@ -1517,7 +1336,6 @@ if ($approved_result) {
                                             ?>"
                                         >
 
-
                                         <button
                                             type="submit"
                                             name="seller_action"
@@ -1530,11 +1348,9 @@ if ($approved_result) {
 
                                     </form>
 
-
                                 <?php elseif (
                                     $status === "Approved"
                                 ): ?>
-
 
                                     <a
                                         href="seller_details.php?id=<?php
@@ -1546,23 +1362,17 @@ if ($approved_result) {
                                         View Details
                                     </a>
 
-
                                 <?php else: ?>
-
 
                                     <span class="no-action">
                                         Application rejected
                                     </span>
 
-
                                 <?php endif; ?>
-
 
                             </td>
 
-
                         </tr>
-
 
                     <?php
 
@@ -1572,18 +1382,13 @@ if ($approved_result) {
 
                     ?>
 
-
                     </tbody>
-
 
                 </table>
 
-
             </div>
 
-
         <?php else: ?>
-
 
             <div class="empty-state">
 
@@ -1591,11 +1396,9 @@ if ($approved_result) {
                     🏪
                 </div>
 
-
                 <h3>
                     No Sellers Found
                 </h3>
-
 
                 <p>
 
@@ -1618,12 +1421,9 @@ if ($approved_result) {
 
             </div>
 
-
         <?php endif; ?>
 
-
     </div>
-
 
     <a
         href="dashboard.php"
@@ -1632,9 +1432,7 @@ if ($approved_result) {
         ← Back to Dashboard
     </a>
 
-
 </div>
-
 
 <footer>
 
@@ -1643,7 +1441,6 @@ if ($approved_result) {
     </p>
 
 </footer>
-
 
 </body>
 

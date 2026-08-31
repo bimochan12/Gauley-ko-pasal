@@ -22,10 +22,6 @@ if (!isset($_GET["id"])) {
 
 $order_id = (int) $_GET["id"];
 
-
-/* CHECK THAT THIS ORDER CONTAINS A PRODUCT
-   BELONGING TO THE LOGGED-IN SELLER */
-
 $check_sql = "SELECT DISTINCT orders.order_id
               FROM orders
               INNER JOIN order_items
@@ -49,9 +45,6 @@ if ($check_result->num_rows !== 1) {
     header("Location: orders.php");
     exit();
 }
-
-
-/* GET ONLY THIS SELLER'S ITEMS */
 
 $sql = "SELECT
             order_items.quantity,
@@ -104,7 +97,6 @@ $result = $stmt->get_result();
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -118,7 +110,6 @@ $result = $stmt->get_result();
         </p>
 
     </div>
-
 
     <div class="products">
 
@@ -140,7 +131,6 @@ $result = $stmt->get_result();
 
                 <?php endif; ?>
 
-
                 <h3>
                     <?php
                     echo htmlspecialchars(
@@ -148,7 +138,6 @@ $result = $stmt->get_result();
                     );
                     ?>
                 </h3>
-
 
                 <p>
 
@@ -161,7 +150,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -176,7 +164,6 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
-
 
                 <p>
 
@@ -198,7 +185,6 @@ $result = $stmt->get_result();
 
     </div>
 
-
     <br>
 
     <a
@@ -209,7 +195,6 @@ $result = $stmt->get_result();
     </a>
 
 </div>
-
 
 <footer>
 

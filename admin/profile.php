@@ -5,11 +5,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -19,13 +14,7 @@ if (
     exit();
 }
 
-
 $message = "";
-
-
-/* =========================
-   GET CURRENT ADMIN
-========================= */
 
 $admin_id = (int) $_SESSION["user_id"];
 
@@ -47,18 +36,12 @@ $result = $stmt->get_result();
 
 $admin = $result->fetch_assoc();
 
-
-/* =========================
-   UPDATE PROFILE
-========================= */
-
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
     isset($_POST["update_profile"])
 ) {
 
     $name = trim($_POST["name"]);
-
 
     if ($name === "") {
 
@@ -80,7 +63,6 @@ if (
             $admin_id
         );
 
-
         if ($update_stmt->execute()) {
 
             $_SESSION["name"] = $name;
@@ -101,11 +83,6 @@ if (
 
 }
 
-
-/* =========================
-   CHANGE PASSWORD
-========================= */
-
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
     isset($_POST["change_password"])
@@ -119,7 +96,6 @@ if (
 
     $confirm_password =
         $_POST["confirm_password"];
-
 
     if (
         $current_password === "" ||
@@ -172,7 +148,6 @@ if (
         $password_data =
             $password_result->fetch_assoc();
 
-
         if (
             password_verify(
                 $current_password,
@@ -185,7 +160,6 @@ if (
                     $new_password,
                     PASSWORD_DEFAULT
                 );
-
 
             $update_password_stmt =
                 $conn->prepare(
@@ -200,7 +174,6 @@ if (
                 $hashed_password,
                 $admin_id
             );
-
 
             if (
                 $update_password_stmt->execute()
@@ -248,7 +221,6 @@ if (
 
 <body>
 
-
 <header>
 
     <h1>
@@ -285,9 +257,7 @@ if (
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -300,7 +270,6 @@ if (
         </p>
 
     </div>
-
 
     <?php if ($message !== ""): ?>
 
@@ -320,15 +289,13 @@ if (
 
     <?php endif; ?>
 
-
-    <!-- PROFILE DETAILS -->
+    
 
     <div class="card">
 
         <h2>
             Profile Information
         </h2>
-
 
         <form method="POST">
 
@@ -337,7 +304,6 @@ if (
                 name="update_profile"
                 value="1"
             >
-
 
             <label>
                 Name
@@ -356,7 +322,6 @@ if (
 
             <br><br>
 
-
             <label>
                 Email
             </label>
@@ -373,7 +338,6 @@ if (
 
             <br><br>
 
-
             <button type="submit">
                 Update Profile
             </button>
@@ -382,18 +346,15 @@ if (
 
     </div>
 
-
     <br>
 
-
-    <!-- CHANGE PASSWORD -->
+    
 
     <div class="card">
 
         <h2>
             Change Password
         </h2>
-
 
         <form method="POST">
 
@@ -402,7 +363,6 @@ if (
                 name="change_password"
                 value="1"
             >
-
 
             <label>
                 Current Password
@@ -415,7 +375,6 @@ if (
             >
 
             <br><br>
-
 
             <label>
                 New Password
@@ -430,7 +389,6 @@ if (
 
             <br><br>
 
-
             <label>
                 Confirm New Password
             </label>
@@ -444,7 +402,6 @@ if (
 
             <br><br>
 
-
             <button type="submit">
                 Change Password
             </button>
@@ -453,17 +410,13 @@ if (
 
     </div>
 
-
     <br>
-
 
     <a href="dashboard.php">
         ← Back to Dashboard
     </a>
 
-
 </div>
-
 
 <footer>
 
@@ -474,8 +427,8 @@ if (
 
 </footer>
 
-
 </body>
 
 </html>
 ```
+

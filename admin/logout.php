@@ -3,11 +3,6 @@
 
 session_start();
 
-
-/* =========================
-   RECORD LOGOUT ACTIVITY
-========================= */
-
 if (
     isset($_SESSION["user_id"]) &&
     isset($_SESSION["role"]) &&
@@ -27,7 +22,6 @@ if (
         $admin_name .
         " logged out of the admin panel.";
 
-
     $log_stmt = $conn->prepare(
         "INSERT INTO activity_logs
         (
@@ -37,7 +31,6 @@ if (
         )
         VALUES (?, ?, ?)"
     );
-
 
     if ($log_stmt) {
 
@@ -54,19 +47,9 @@ if (
 
 }
 
-
-/* =========================
-   DESTROY SESSION
-========================= */
-
 session_unset();
 
 session_destroy();
-
-
-/* =========================
-   REDIRECT TO LOGIN
-========================= */
 
 header("Location: login.php");
 
@@ -74,3 +57,4 @@ exit();
 
 ?>
 ```
+

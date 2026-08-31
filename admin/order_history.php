@@ -14,11 +14,6 @@ if (
 
 require_once "../config/database.php";
 
-
-/* =========================
-   GET COMPLETED ORDERS
-========================= */
-
 $sql = "SELECT
             orders.order_id,
             orders.user_id,
@@ -68,7 +63,6 @@ $result = $conn->query($sql);
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -80,7 +74,6 @@ $result = $conn->query($sql);
         </p>
 
     </div>
-
 
     <?php if (!$result || $result->num_rows === 0): ?>
 
@@ -165,7 +158,6 @@ $result = $conn->query($sql);
 
 </div>
 
-
 <footer>
 
     <p>
@@ -178,3 +170,4 @@ $result = $conn->query($sql);
 
 </html>
 ```
+

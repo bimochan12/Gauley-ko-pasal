@@ -6,20 +6,10 @@ require_once "../config/database.php";
 
 $message = "";
 
-
-/* =========================
-   ADMIN LOGIN
-========================= */
-
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $email = trim($_POST["email"]);
     $password = $_POST["password"];
-
-
-    /* =========================
-       FIND ADMIN ACCOUNT
-    ========================= */
 
     $sql = "
         SELECT
@@ -44,15 +34,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $result = $stmt->get_result();
 
-
-    /* =========================
-       VERIFY LOGIN
-    ========================= */
-
     if ($result->num_rows === 1) {
 
         $user = $result->fetch_assoc();
-
 
         if (
             password_verify(
@@ -60,10 +44,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $user["password"]
             )
         ) {
-
-            /* =========================
-               CREATE SESSION
-            ========================= */
 
             $_SESSION["user_id"] =
                 $user["user_id"];
@@ -73,11 +53,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $_SESSION["role"] =
                 $user["role"];
-
-
-            /* =========================
-               RECORD LOGIN ACTIVITY
-            ========================= */
 
             $admin_id =
                 (int) $user["user_id"];
@@ -89,7 +64,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "Admin " .
                 $user["name"] .
                 " logged into the admin panel.";
-
 
             $log_stmt = $conn->prepare(
                 "INSERT INTO activity_logs
@@ -113,11 +87,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $log_stmt->execute();
 
             }
-
-
-            /* =========================
-               REDIRECT
-            ========================= */
 
             header(
                 "Location: dashboard.php"
@@ -160,8 +129,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <style>
 
-        /* Clickable Gauley Ko Pasal logo */
-
         .site-logo {
 
             color: inherit;
@@ -184,10 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <body>
 
-
 <header>
-
-    <!-- CLICKABLE GAULEY KO PASAL -->
 
     <h1>
 
@@ -200,7 +164,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </h1>
 
-
     <nav>
 
         <a href="login.php">
@@ -211,9 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -228,9 +189,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </div>
 
-
     <div class="card">
-
 
         <?php if ($message !== ""): ?>
 
@@ -246,9 +205,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <?php endif; ?>
 
-
         <form method="POST">
-
 
             <label>
                 Email
@@ -262,7 +219,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Password
             </label>
@@ -275,20 +231,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <button type="submit">
                 Login
             </button>
 
-
         </form>
-
 
     </div>
 
-
 </div>
-
 
 <footer>
 
@@ -298,7 +249,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </p>
 
 </footer>
-
 
 </body>
 

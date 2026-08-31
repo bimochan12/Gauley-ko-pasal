@@ -20,9 +20,7 @@ session_start();
 
 </head>
 
-
 <body>
-
 
 <header>
 
@@ -32,13 +30,9 @@ session_start();
 
 </header>
 
-
 <div class="container">
 
-
-    <!-- =========================
-         WELCOME
-    ========================== -->
+    
 
     <div class="hero">
 
@@ -53,22 +47,16 @@ session_start();
 
     </div>
 
-
-    <!-- =========================
-         USER OPTIONS
-    ========================== -->
+    
 
     <div class="products">
 
-
-        <!-- =====================
-             CUSTOMER
-        ====================== -->
+        
 
         <div class="product-card">
 
             <h3>
-                🛍️ Customer
+                 Customer
             </h3>
 
             <p>
@@ -103,15 +91,12 @@ session_start();
 
         </div>
 
-
-        <!-- =====================
-             SELLER
-        ====================== -->
+        
 
         <div class="product-card">
 
             <h3>
-                🏪 Seller
+                 Seller
             </h3>
 
             <p>
@@ -138,15 +123,12 @@ session_start();
 
         </div>
 
-
-        <!-- =====================
-             ADMIN
-        ====================== -->
+        
 
         <div class="product-card">
 
             <h3>
-                🔐 Administrator
+                 Admin
             </h3>
 
             <p>
@@ -165,13 +147,9 @@ session_start();
 
         </div>
 
-
     </div>
 
-
-    <!-- =========================
-         LOGGED-IN USER SHORTCUT
-    ========================== -->
+    
 
     <?php if (isset($_SESSION["user_id"])): ?>
 
@@ -199,7 +177,6 @@ session_start();
 
             </p>
 
-
             <?php if (
                 $_SESSION["role"] === "customer"
             ): ?>
@@ -211,7 +188,6 @@ session_start();
                     Go to Store
                 </a>
 
-
             <?php elseif (
                 $_SESSION["role"] === "seller"
             ): ?>
@@ -222,7 +198,6 @@ session_start();
                 >
                     Go to Seller Dashboard
                 </a>
-
 
             <?php elseif (
                 $_SESSION["role"] === "admin"
@@ -237,14 +212,11 @@ session_start();
 
             <?php endif; ?>
 
-
         </div>
 
     <?php endif; ?>
 
-
 </div>
-
 
 <footer>
 
@@ -253,7 +225,6 @@ session_start();
     </p>
 
 </footer>
-
 
 </body>
 

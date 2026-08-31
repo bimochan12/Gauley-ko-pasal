@@ -113,7 +113,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -126,7 +125,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </div>
 
-
     <div class="card">
 
         <?php if ($message !== ""): ?>
@@ -136,7 +134,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </p>
 
         <?php endif; ?>
-
 
         <form method="POST">
 
@@ -150,7 +147,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>Password</label>
 
             <input
@@ -161,13 +157,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <button type="submit">
                 Login
             </button>
 
         </form>
-
 
         <br>
 
@@ -184,7 +178,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
 </div>
-
 
 <footer>
 

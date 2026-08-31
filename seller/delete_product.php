@@ -22,9 +22,6 @@ if (!isset($_GET["id"])) {
 $product_id = (int) $_GET["id"];
 $seller_id = $_SESSION["user_id"];
 
-
-/* DELETE ONLY IF THE PRODUCT BELONGS TO THIS SELLER */
-
 $sql = "DELETE FROM products
         WHERE product_id = ?
         AND seller_id = ?";
@@ -38,7 +35,6 @@ $stmt->bind_param(
 );
 
 $stmt->execute();
-
 
 header("Location: products.php");
 exit();

@@ -16,11 +16,6 @@ require_once "../config/database.php";
 
 $seller_id = (int) $_SESSION["user_id"];
 
-
-/* =========================
-   TOTAL PRODUCTS
-========================= */
-
 $product_stmt = $conn->prepare(
     "SELECT COUNT(*) AS total
      FROM products
@@ -40,11 +35,6 @@ $product_result =
 $total_products =
     (int) $product_result
     ->fetch_assoc()["total"];
-
-
-/* =========================
-   ACTIVE ORDER ITEMS
-========================= */
 
 $active_stmt = $conn->prepare(
     "SELECT COUNT(*) AS total
@@ -73,11 +63,6 @@ $active_orders =
     (int) $active_result
     ->fetch_assoc()["total"];
 
-
-/* =========================
-   DELIVERED ORDER ITEMS
-========================= */
-
 $delivered_stmt = $conn->prepare(
     "SELECT COUNT(*) AS total
      FROM order_items
@@ -103,12 +88,6 @@ $delivered_result =
 $delivered_orders =
     (int) $delivered_result
     ->fetch_assoc()["total"];
-
-
-/* =========================
-   TOTAL EARNINGS
-   FROM DELIVERED PRODUCTS
-========================= */
 
 $earnings_stmt = $conn->prepare(
     "SELECT
@@ -165,13 +144,11 @@ $total_earnings =
 
 <body>
 
-
 <header>
 
     <h1>
         Gauley Ko Pasal
     </h1>
-
 
     <nav>
 
@@ -199,11 +176,9 @@ $total_earnings =
 
 </header>
 
-
 <div class="container">
 
-
-    <!-- WELCOME -->
+    
 
     <div class="hero">
 
@@ -234,13 +209,11 @@ $total_earnings =
 
     </div>
 
-
-    <!-- STATISTICS -->
+    
 
     <div class="products">
 
-
-        <!-- TOTAL PRODUCTS -->
+        
 
         <div class="product-card">
 
@@ -263,8 +236,7 @@ $total_earnings =
 
         </div>
 
-
-        <!-- ACTIVE ORDERS -->
+        
 
         <div class="product-card">
 
@@ -287,8 +259,7 @@ $total_earnings =
 
         </div>
 
-
-        <!-- DELIVERED -->
+        
 
         <div class="product-card">
 
@@ -311,8 +282,7 @@ $total_earnings =
 
         </div>
 
-
-        <!-- EARNINGS -->
+        
 
         <div class="product-card">
 
@@ -340,19 +310,15 @@ $total_earnings =
 
         </div>
 
-
     </div>
-
 
     <br>
 
-
-    <!-- QUICK ACTIONS -->
+    
 
     <div class="products">
 
-
-        <!-- PRODUCTS -->
+        
 
         <div class="product-card">
 
@@ -374,8 +340,7 @@ $total_earnings =
 
         </div>
 
-
-        <!-- ACTIVE ORDERS -->
+        
 
         <div class="product-card">
 
@@ -397,8 +362,7 @@ $total_earnings =
 
         </div>
 
-
-        <!-- HISTORY -->
+        
 
         <div class="product-card">
 
@@ -420,12 +384,9 @@ $total_earnings =
 
         </div>
 
-
     </div>
 
-
 </div>
-
 
 <footer>
 
@@ -436,8 +397,8 @@ $total_earnings =
 
 </footer>
 
-
 </body>
 
 </html>
 ```
+

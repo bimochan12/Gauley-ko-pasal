@@ -4,11 +4,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -18,21 +13,11 @@ if (
     exit();
 }
 
-
-/* =========================
-   SEARCH
-========================= */
-
 $search = "";
 
 if (isset($_GET["search"])) {
     $search = trim($_GET["search"]);
 }
-
-
-/* =========================
-   GET APPROVED SELLERS
-========================= */
 
 if ($search !== "") {
 
@@ -122,7 +107,6 @@ if ($search !== "") {
             margin-top: 20px;
         }
 
-
         .seller-card {
             background: white;
             padding: 22px;
@@ -130,16 +114,13 @@ if ($search !== "") {
             box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         }
 
-
         .seller-card h3 {
             margin-top: 0;
         }
 
-
         .seller-card p {
             margin: 8px 0;
         }
-
 
         .details-button {
             display: inline-block;
@@ -152,21 +133,14 @@ if ($search !== "") {
             font-weight: bold;
         }
 
-
         .details-button:hover {
             opacity: 0.9;
         }
-
 
         .back-button {
             display: inline-block;
             margin-top: 20px;
         }
-
-
-        /* =========================
-           SEARCH BOX
-        ========================= */
 
         .search-box {
             display: flex;
@@ -174,7 +148,6 @@ if ($search !== "") {
             margin-top: 20px;
             margin-bottom: 20px;
         }
-
 
         .search-box input {
             flex: 1;
@@ -184,7 +157,6 @@ if ($search !== "") {
             font-size: 15px;
         }
 
-
         .search-box button {
             padding: 11px 20px;
             border: none;
@@ -193,7 +165,6 @@ if ($search !== "") {
             background: #222;
             color: white;
         }
-
 
         .clear-search {
             display: inline-block;
@@ -208,9 +179,7 @@ if ($search !== "") {
 
 </head>
 
-
 <body>
-
 
 <header>
 
@@ -218,33 +187,27 @@ if ($search !== "") {
         Gauley Ko Pasal
     </h1>
 
-
     <nav>
 
         <a href="dashboard.php">
             Dashboard
         </a>
 
-
         <a href="sellers.php">
             Seller Applications
         </a>
-
 
         <a href="approved_sellers.php">
             Approved Sellers
         </a>
 
-
         <a href="users.php">
             Users
         </a>
 
-
         <a href="activity_logs.php">
             Activity Logs
         </a>
-
 
         <a href="logout.php">
             Logout
@@ -254,9 +217,7 @@ if ($search !== "") {
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -270,23 +231,15 @@ if ($search !== "") {
 
     </div>
 
-
     <div class="card">
-
 
         <h2>
             Approved Sellers
         </h2>
 
-
         <p>
             These are sellers who have been approved by the administrator.
         </p>
-
-
-        <!-- =========================
-             SEARCH
-        ========================== -->
 
         <form
             method="GET"
@@ -300,11 +253,9 @@ if ($search !== "") {
                 value="<?php echo htmlspecialchars($search); ?>"
             >
 
-
             <button type="submit">
                 🔎 Search
             </button>
-
 
             <?php if ($search !== ""): ?>
 
@@ -319,24 +270,19 @@ if ($search !== "") {
 
         </form>
 
-
         <?php if (
             $result &&
             $result->num_rows > 0
         ): ?>
 
-
             <div class="seller-grid">
-
 
                 <?php while (
                     $seller =
                     $result->fetch_assoc()
                 ): ?>
 
-
                     <div class="seller-card">
-
 
                         <h3>
 
@@ -362,7 +308,6 @@ if ($search !== "") {
 
                         </h3>
 
-
                         <p>
 
                             <strong>
@@ -376,7 +321,6 @@ if ($search !== "") {
                             ?>
 
                         </p>
-
 
                         <p>
 
@@ -392,7 +336,6 @@ if ($search !== "") {
 
                         </p>
 
-
                         <p>
 
                             <strong>
@@ -406,7 +349,6 @@ if ($search !== "") {
                             ?>
 
                         </p>
-
 
                         <p>
 
@@ -422,7 +364,6 @@ if ($search !== "") {
 
                         </p>
 
-
                         <p>
 
                             <strong>
@@ -436,7 +377,6 @@ if ($search !== "") {
                             ?>
 
                         </p>
-
 
                         <p>
 
@@ -455,7 +395,6 @@ if ($search !== "") {
 
                         </p>
 
-
                         <a
                             class="details-button"
                             href="seller_details.php?id=<?php echo (int) $seller["user_id"]; ?>"
@@ -463,25 +402,19 @@ if ($search !== "") {
                             View Seller Details
                         </a>
 
-
                     </div>
-
 
                 <?php endwhile; ?>
 
-
             </div>
 
-
         <?php else: ?>
-
 
             <div class="card">
 
                 <h3>
                     No Approved Sellers Found
                 </h3>
-
 
                 <p>
 
@@ -505,12 +438,9 @@ if ($search !== "") {
 
             </div>
 
-
         <?php endif; ?>
 
-
     </div>
-
 
     <a
         class="back-button"
@@ -519,9 +449,7 @@ if ($search !== "") {
         ← Back to Dashboard
     </a>
 
-
 </div>
-
 
 <footer>
 
@@ -530,7 +458,6 @@ if ($search !== "") {
     </p>
 
 </footer>
-
 
 </body>
 

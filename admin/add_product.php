@@ -15,25 +15,11 @@ if (
 
 $message = "";
 
-
-/*
-|--------------------------------------------------------------------------
-| Load Categories
-|--------------------------------------------------------------------------
-*/
-
 $categories = $conn->query(
     "SELECT category_id, category_name
      FROM categories
      ORDER BY category_name ASC"
 );
-
-
-/*
-|--------------------------------------------------------------------------
-| Add Product
-|--------------------------------------------------------------------------
-*/
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -44,13 +30,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $category_id = (int) $_POST["category_id"];
 
     $image_name = "";
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Basic Validation
-    |--------------------------------------------------------------------------
-    */
 
     if (
         $product_name === "" ||
@@ -63,13 +42,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     } else {
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Image Upload
-        |--------------------------------------------------------------------------
-        */
-
         if (
             isset($_FILES["image"]) &&
             $_FILES["image"]["error"] === UPLOAD_ERR_OK
@@ -80,7 +52,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
-
 
             $original_name = $_FILES["image"]["name"];
 
@@ -93,14 +64,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 )
             );
 
-
             $allowed_extensions = [
                 "jpg",
                 "jpeg",
                 "png",
                 "webp"
             ];
-
 
             if (
                 !in_array(
@@ -119,10 +88,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     . "."
                     . $file_extension;
 
-
                 $destination =
                     $upload_dir . $image_name;
-
 
                 if (
                     !move_uploaded_file(
@@ -142,13 +109,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Insert Product
-        |--------------------------------------------------------------------------
-        */
-
         if ($message === "") {
 
             $sql = "INSERT INTO products
@@ -163,12 +123,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-
             $stmt = $conn->prepare($sql);
 
-
             $seller_id = $_SESSION["user_id"];
-
 
             $stmt->bind_param(
                 "ssdisii",
@@ -180,7 +137,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $category_id,
                 $seller_id
             );
-
 
             if ($stmt->execute()) {
 
@@ -254,7 +210,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -266,7 +221,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </p>
 
     </div>
-
 
     <?php if ($message !== ""): ?>
 
@@ -281,7 +235,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
     <?php endif; ?>
-
 
     <div class="card">
 
@@ -302,7 +255,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Description
             </label>
@@ -313,7 +265,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ></textarea>
 
             <br><br>
-
 
             <label>
                 Price
@@ -329,7 +280,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Quantity
             </label>
@@ -342,7 +292,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             >
 
             <br><br>
-
 
             <label>
                 Category
@@ -386,7 +335,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Product Image
             </label>
@@ -399,7 +347,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <button type="submit">
                 Add Product
             </button>
@@ -408,16 +355,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </div>
 
-
     <br>
-
 
     <a href="products.php">
         ← Back to Products
     </a>
 
 </div>
-
 
 <footer>
 

@@ -13,11 +13,6 @@ if (
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ONLY ACCEPT POST
-========================= */
-
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
     header("Location: orders.php");
@@ -25,17 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 }
 
-
-/* =========================
-   GET SELLER ID
-========================= */
-
 $seller_id = (int) $_SESSION["user_id"];
-
-
-/* =========================
-   GET FORM DATA
-========================= */
 
 $order_item_id =
     isset($_POST["order_item_id"])
@@ -47,11 +32,6 @@ $status =
     ? trim($_POST["status"])
     : "";
 
-
-/* =========================
-   VALIDATE ORDER ITEM ID
-========================= */
-
 if ($order_item_id <= 0) {
 
     header(
@@ -62,18 +42,12 @@ if ($order_item_id <= 0) {
 
 }
 
-
-/* =========================
-   VALIDATE STATUS
-========================= */
-
 $allowed_statuses = [
     "Pending",
     "Processing",
     "Delivered",
     "Cancelled"
 ];
-
 
 if (
     !in_array(
@@ -91,12 +65,6 @@ if (
 
 }
 
-
-/* =========================
-   GET ORDER ITEM
-   AND CHECK SELLER OWNERSHIP
-========================= */
-
 $check_stmt = $conn->prepare(
     "SELECT
         order_items.order_item_id,
@@ -111,7 +79,6 @@ $check_stmt = $conn->prepare(
      AND products.seller_id = ?"
 );
 
-
 if (!$check_stmt) {
 
     header(
@@ -121,7 +88,6 @@ if (!$check_stmt) {
     exit();
 
 }
-
 
 $check_stmt->bind_param(
     "ii",
@@ -134,11 +100,6 @@ $check_stmt->execute();
 $check_result =
     $check_stmt->get_result();
 
-
-/* =========================
-   CHECK PERMISSION
-========================= */
-
 if ($check_result->num_rows === 0) {
 
     header(
@@ -149,18 +110,11 @@ if ($check_result->num_rows === 0) {
 
 }
 
-
 $order_item =
     $check_result->fetch_assoc();
 
 $current_status =
     $order_item["status"];
-
-
-/* =========================
-   PREVENT CHANGING
-   COMPLETED ITEMS
-========================= */
 
 if (
     $current_status === "Delivered" ||
@@ -175,15 +129,7 @@ if (
 
 }
 
-
-/* =========================
-   VALID STATUS FLOW
-========================= */
-
 $valid_change = false;
-
-
-/* Pending -> Processing / Cancelled */
 
 if (
     $current_status === "Pending"
@@ -199,9 +145,6 @@ if (
 
 }
 
-
-/* Processing -> Delivered / Cancelled */
-
 elseif (
     $current_status === "Processing"
     &&
@@ -216,9 +159,6 @@ elseif (
 
 }
 
-
-/* Same status */
-
 elseif (
     $current_status === $status
 ) {
@@ -231,9 +171,6 @@ elseif (
 
 }
 
-
-/* Invalid status change */
-
 if (!$valid_change) {
 
     header(
@@ -244,18 +181,11 @@ if (!$valid_change) {
 
 }
 
-
-/* =========================
-   UPDATE ONLY THIS
-   ORDER ITEM
-========================= */
-
 $update_stmt = $conn->prepare(
     "UPDATE order_items
      SET status = ?
      WHERE order_item_id = ?"
 );
-
 
 if (!$update_stmt) {
 
@@ -267,17 +197,11 @@ if (!$update_stmt) {
 
 }
 
-
 $update_stmt->bind_param(
     "si",
     $status,
     $order_item_id
 );
-
-
-/* =========================
-   EXECUTE UPDATE
-========================= */
 
 if ($update_stmt->execute()) {
 
@@ -288,7 +212,6 @@ if ($update_stmt->execute()) {
     exit();
 
 }
-
 
 header(
     "Location: orders.php?error=update_failed"

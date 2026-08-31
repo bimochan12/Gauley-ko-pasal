@@ -4,11 +4,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -18,11 +13,6 @@ if (
     exit();
 }
 
-
-/* =========================
-   CHECK SELLER ID
-========================= */
-
 if (
     !isset($_GET["id"]) ||
     !is_numeric($_GET["id"])
@@ -31,13 +21,7 @@ if (
     exit();
 }
 
-
 $seller_id = (int) $_GET["id"];
-
-
-/* =========================
-   GET APPROVED SELLER
-========================= */
 
 $stmt = $conn->prepare(
     "SELECT
@@ -59,23 +43,18 @@ $stmt = $conn->prepare(
      AND seller_status = 'Approved'"
 );
 
-
 if (!$stmt) {
     die("Could not prepare seller query.");
 }
-
 
 $stmt->bind_param(
     "i",
     $seller_id
 );
 
-
 $stmt->execute();
 
-
 $result = $stmt->get_result();
-
 
 if ($result->num_rows !== 1) {
 
@@ -152,7 +131,6 @@ if ($result->num_rows !== 1) {
 
     </header>
 
-
     <div class="admin-container">
 
         <div class="empty-state">
@@ -181,7 +159,6 @@ if ($result->num_rows !== 1) {
 
     </div>
 
-
     <footer>
 
         <p>
@@ -199,14 +176,11 @@ if ($result->num_rows !== 1) {
     exit();
 }
 
-
 $seller = $result->fetch_assoc();
-
 
 $stmt->close();
 
 ?>
-
 
 <!DOCTYPE html>
 
@@ -232,24 +206,17 @@ $stmt->close();
         - Gauley Ko Pasal
     </title>
 
-
     <link
         rel="stylesheet"
         href="../style.css"
     >
 
-
     <style>
-
-        /* =========================
-           HEADER
-        ========================= */
 
         header {
             background: #7b1e2b;
             padding: 18px 6%;
         }
-
 
         .admin-header {
             display: flex;
@@ -258,7 +225,6 @@ $stmt->close();
             gap: 25px;
         }
 
-
         .site-logo {
             color: white;
             text-decoration: none;
@@ -266,16 +232,13 @@ $stmt->close();
             font-weight: bold;
         }
 
-
         .site-logo:hover {
             text-decoration: none;
         }
 
-
         nav {
             margin-top: 0;
         }
-
 
         nav a {
             color: white;
@@ -283,15 +246,9 @@ $stmt->close();
             font-size: 14px;
         }
 
-
         nav a:last-child {
             margin-right: 0;
         }
-
-
-        /* =========================
-           MAIN
-        ========================= */
 
         .admin-container {
             width: 88%;
@@ -299,10 +256,7 @@ $stmt->close();
             margin: 35px auto 60px;
         }
 
-
-        /* =========================
-           HERO
-        ========================= */
+        
 
         .details-hero {
 
@@ -321,7 +275,6 @@ $stmt->close();
             border: 1px solid #e2d2b5;
         }
 
-
         .details-hero h2 {
 
             margin: 0 0 8px;
@@ -331,7 +284,6 @@ $stmt->close();
             font-size: 30px;
         }
 
-
         .details-hero p {
 
             margin: 0;
@@ -339,10 +291,7 @@ $stmt->close();
             color: #62564e;
         }
 
-
-        /* =========================
-           SHOP HEADER
-        ========================= */
+        
 
         .shop-profile {
 
@@ -371,7 +320,6 @@ $stmt->close();
             gap: 20px;
         }
 
-
         .shop-icon {
 
             width: 70px;
@@ -393,7 +341,6 @@ $stmt->close();
             flex-shrink: 0;
         }
 
-
         .shop-profile h1 {
 
             margin: 0 0 6px;
@@ -403,14 +350,12 @@ $stmt->close();
             font-size: 27px;
         }
 
-
         .seller-subtitle {
 
             color: #6d6158;
 
             margin: 0;
         }
-
 
         .approved-badge {
 
@@ -431,10 +376,7 @@ $stmt->close();
             font-weight: bold;
         }
 
-
-        /* =========================
-           INFORMATION CARD
-        ========================= */
+        
 
         .information-card {
 
@@ -457,7 +399,6 @@ $stmt->close();
             overflow: hidden;
         }
 
-
         .information-header {
 
             padding: 20px 25px;
@@ -466,7 +407,6 @@ $stmt->close();
 
             border-bottom: 1px solid #eee4d5;
         }
-
 
         .information-header h2 {
 
@@ -477,12 +417,10 @@ $stmt->close();
             font-size: 19px;
         }
 
-
         .information-body {
 
             padding: 5px 25px 15px;
         }
-
 
         .detail-row {
 
@@ -497,12 +435,10 @@ $stmt->close();
             border-bottom: 1px solid #eee7dc;
         }
 
-
         .detail-row:last-child {
 
             border-bottom: none;
         }
-
 
         .detail-label {
 
@@ -511,7 +447,6 @@ $stmt->close();
             color: #6d6158;
         }
 
-
         .detail-value {
 
             color: #302823;
@@ -519,10 +454,7 @@ $stmt->close();
             word-break: break-word;
         }
 
-
-        /* =========================
-           STATUS
-        ========================= */
+        
 
         .status-approved {
 
@@ -541,10 +473,7 @@ $stmt->close();
             font-size: 13px;
         }
 
-
-        /* =========================
-           NATIONAL ID
-        ========================= */
+        
 
         .id-link {
 
@@ -563,7 +492,6 @@ $stmt->close();
             font-size: 14px;
         }
 
-
         .id-link:hover {
 
             background: #5d1721;
@@ -571,10 +499,7 @@ $stmt->close();
             text-decoration: none;
         }
 
-
-        /* =========================
-           BACK BUTTON
-        ========================= */
+        
 
         .back-button {
 
@@ -593,7 +518,6 @@ $stmt->close();
             margin-top: 5px;
         }
 
-
         .back-button:hover {
 
             background: #5d1721;
@@ -601,10 +525,7 @@ $stmt->close();
             text-decoration: none;
         }
 
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
+        
 
         @media (max-width: 850px) {
 
@@ -623,14 +544,12 @@ $stmt->close();
 
         }
 
-
         @media (max-width: 600px) {
 
             .admin-container {
 
                 width: 92%;
             }
-
 
             .shop-profile {
 
@@ -639,7 +558,6 @@ $stmt->close();
                 flex-direction: column;
             }
 
-
             .detail-row {
 
                 grid-template-columns: 1fr;
@@ -647,12 +565,10 @@ $stmt->close();
                 gap: 5px;
             }
 
-
             .details-hero {
 
                 padding: 25px;
             }
-
 
             .details-hero h2 {
 
@@ -665,13 +581,7 @@ $stmt->close();
 
 </head>
 
-
 <body>
-
-
-<!-- =========================
-     HEADER
-========================= -->
 
 <header>
 
@@ -683,7 +593,6 @@ $stmt->close();
         >
             Gauley Ko Pasal
         </a>
-
 
         <nav>
 
@@ -717,15 +626,9 @@ $stmt->close();
 
 </header>
 
-
-<!-- =========================
-     MAIN
-========================= -->
-
 <div class="admin-container">
 
-
-    <!-- PAGE HERO -->
+    
 
     <div class="details-hero">
 
@@ -739,18 +642,13 @@ $stmt->close();
 
     </div>
 
-
-    <!-- =========================
-         SHOP PROFILE
-    ========================== -->
+    
 
     <div class="shop-profile">
-
 
         <div class="shop-icon">
             🏪
         </div>
-
 
         <div>
 
@@ -768,7 +666,6 @@ $stmt->close();
 
             </h1>
 
-
             <p class="seller-subtitle">
 
                 Seller:
@@ -785,23 +682,17 @@ $stmt->close();
 
             </p>
 
-
             <span class="approved-badge">
                 ✓ Approved Seller
             </span>
 
         </div>
 
-
     </div>
 
-
-    <!-- =========================
-         SELLER INFORMATION
-    ========================== -->
+    
 
     <div class="information-card">
-
 
         <div class="information-header">
 
@@ -811,9 +702,7 @@ $stmt->close();
 
         </div>
 
-
         <div class="information-body">
-
 
             <div class="detail-row">
 
@@ -833,7 +722,6 @@ $stmt->close();
 
             </div>
 
-
             <div class="detail-row">
 
                 <div class="detail-label">
@@ -851,7 +739,6 @@ $stmt->close();
                 </div>
 
             </div>
-
 
             <div class="detail-row">
 
@@ -871,7 +758,6 @@ $stmt->close();
 
             </div>
 
-
             <div class="detail-row">
 
                 <div class="detail-label">
@@ -890,18 +776,13 @@ $stmt->close();
 
             </div>
 
-
         </div>
 
     </div>
 
-
-    <!-- =========================
-         SHOP INFORMATION
-    ========================== -->
+    
 
     <div class="information-card">
-
 
         <div class="information-header">
 
@@ -911,9 +792,7 @@ $stmt->close();
 
         </div>
 
-
         <div class="information-body">
-
 
             <div class="detail-row">
 
@@ -937,7 +816,6 @@ $stmt->close();
 
             </div>
 
-
             <div class="detail-row">
 
                 <div class="detail-label">
@@ -955,7 +833,6 @@ $stmt->close();
                 </div>
 
             </div>
-
 
             <div class="detail-row">
 
@@ -975,18 +852,13 @@ $stmt->close();
 
             </div>
 
-
         </div>
 
     </div>
 
-
-    <!-- =========================
-         ACCOUNT INFORMATION
-    ========================== -->
+    
 
     <div class="information-card">
-
 
         <div class="information-header">
 
@@ -996,9 +868,7 @@ $stmt->close();
 
         </div>
 
-
         <div class="information-body">
-
 
             <div class="detail-row">
 
@@ -1015,7 +885,6 @@ $stmt->close();
                 </div>
 
             </div>
-
 
             <div class="detail-row">
 
@@ -1035,7 +904,6 @@ $stmt->close();
 
             </div>
 
-
             <div class="detail-row">
 
                 <div class="detail-label">
@@ -1052,18 +920,13 @@ $stmt->close();
 
             </div>
 
-
         </div>
 
     </div>
 
-
-    <!-- =========================
-         ID INFORMATION
-    ========================== -->
+    
 
     <div class="information-card">
-
 
         <div class="information-header">
 
@@ -1073,9 +936,7 @@ $stmt->close();
 
         </div>
 
-
         <div class="information-body">
-
 
             <div class="detail-row">
 
@@ -1109,20 +970,17 @@ $stmt->close();
 
             </div>
 
-
             <?php if (
                 !empty(
                     $seller["national_id_image"]
                 )
             ): ?>
 
-
                 <div class="detail-row">
 
                     <div class="detail-label">
                         National ID Card
                     </div>
-
 
                     <div class="detail-value">
 
@@ -1142,18 +1000,13 @@ $stmt->close();
 
                 </div>
 
-
             <?php endif; ?>
-
 
         </div>
 
     </div>
 
-
-    <!-- =========================
-         BACK
-    ========================== -->
+    
 
     <a
         href="approved_sellers.php"
@@ -1162,13 +1015,7 @@ $stmt->close();
         ← Back to Approved Sellers
     </a>
 
-
 </div>
-
-
-<!-- =========================
-     FOOTER
-========================= -->
 
 <footer>
 
@@ -1177,7 +1024,6 @@ $stmt->close();
     </p>
 
 </footer>
-
 
 </body>
 

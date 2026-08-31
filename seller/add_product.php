@@ -1,6 +1,4 @@
-# seller/add_product.php
 
-```php
 <?php
 
 session_start();
@@ -16,15 +14,9 @@ if (
 
 require_once "../config/database.php";
 
-
 $message = "";
 
 $seller_id = (int) $_SESSION["user_id"];
-
-
-/* =========================
-   GET CATEGORIES
-========================= */
 
 $category_sql = "
     SELECT
@@ -37,11 +29,6 @@ $category_sql = "
 $category_result = $conn->query(
     $category_sql
 );
-
-
-/* =========================
-   ADD PRODUCT
-========================= */
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -62,10 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $image_name = null;
 
-
-    /* =========================
-       VALIDATE PRODUCT NAME
-    ========================== */
+    
 
     if ($product_name === "") {
 
@@ -74,10 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     }
 
-
-    /* =========================
-       VALIDATE PRICE
-    ========================== */
+    
 
     elseif (
         !is_numeric($price) ||
@@ -89,10 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     }
 
-
-    /* =========================
-       VALIDATE QUANTITY
-    ========================== */
+    
 
     elseif (
         filter_var(
@@ -107,10 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     }
 
-
-    /* =========================
-       VALIDATE CATEGORY
-    ========================== */
+    
 
     elseif ($category_id <= 0) {
 
@@ -137,7 +112,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $category_check_result =
             $category_check->get_result();
 
-
         if (
             $category_check_result->num_rows !== 1
         ) {
@@ -149,10 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     }
 
-
-    /* =========================
-       HANDLE IMAGE UPLOAD
-    ========================== */
+    
 
     if (
         $message === "" &&
@@ -176,7 +147,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "image/webp" => "webp"
             ];
 
-
             $finfo = new finfo(
                 FILEINFO_MIME_TYPE
             );
@@ -184,7 +154,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $file_type = $finfo->file(
                 $_FILES["image"]["tmp_name"]
             );
-
 
             if (
                 !array_key_exists(
@@ -201,7 +170,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $extension =
                     $allowed_types[$file_type];
 
-
                 $image_name =
                     uniqid(
                         "product_",
@@ -210,10 +178,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     . "."
                     . $extension;
 
-
                 $upload_directory =
                     "../uploads/";
-
 
                 if (
                     !is_dir(
@@ -229,11 +195,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 }
 
-
                 $upload_path =
                     $upload_directory .
                     $image_name;
-
 
                 if (
                     !move_uploaded_file(
@@ -255,10 +219,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     }
 
-
-    /* =========================
-       INSERT PRODUCT
-    ========================== */
+    
 
     if ($message === "") {
 
@@ -267,7 +228,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $quantity =
             (int) $quantity;
-
 
         $sql = "
             INSERT INTO products
@@ -292,11 +252,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             )
         ";
 
-
         $stmt = $conn->prepare(
             $sql
         );
-
 
         $stmt->bind_param(
             "ssdisii",
@@ -309,7 +267,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $seller_id
         );
 
-
         if ($stmt->execute()) {
 
             header(
@@ -320,8 +277,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         } else {
 
-            /* Remove uploaded image if
-               database insert failed */
+            
 
             if (
                 $image_name !== null
@@ -344,7 +300,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 }
 
             }
-
 
             $message =
                 "Something went wrong while adding the product.";
@@ -407,9 +362,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -423,9 +376,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </div>
 
-
     <div class="card">
-
 
         <?php if ($message !== ""): ?>
 
@@ -441,12 +392,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <?php endif; ?>
 
-
         <form
             method="POST"
             enctype="multipart/form-data"
         >
-
 
             <label>
                 Product Name
@@ -460,7 +409,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Description
             </label>
@@ -471,7 +419,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ></textarea>
 
             <br><br>
-
 
             <label>
                 Price
@@ -487,7 +434,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Quantity
             </label>
@@ -501,7 +447,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Category
             </label>
@@ -514,7 +459,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <option value="">
                     Select Category
                 </option>
-
 
                 <?php while (
                     $category =
@@ -538,11 +482,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <?php endwhile; ?>
 
-
             </select>
 
             <br><br>
-
 
             <label>
                 Product Image
@@ -556,20 +498,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <button type="submit">
                 Add Product
             </button>
 
-
         </form>
-
 
     </div>
 
-
 </div>
-
 
 <footer>
 
@@ -580,8 +517,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </footer>
 
-
 </body>
 
 </html>
 ```
+

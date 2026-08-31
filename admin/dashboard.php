@@ -4,11 +4,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -17,11 +12,6 @@ if (
     header("Location: login.php");
     exit();
 }
-
-
-/* =========================
-   COUNT PENDING SELLER APPLICATIONS
-========================= */
 
 $pending_sellers = 0;
 
@@ -42,11 +32,6 @@ if ($result) {
 
 }
 
-
-/* =========================
-   COUNT USERS
-========================= */
-
 $total_users = 0;
 
 $sql = "
@@ -64,11 +49,6 @@ if ($result) {
     $total_users = (int) $row["total"];
 
 }
-
-
-/* =========================
-   COUNT APPROVED SELLERS
-========================= */
 
 $total_sellers = 0;
 
@@ -115,20 +95,14 @@ if ($result) {
 
     <style>
 
-        /* =========================
-           ADMIN DASHBOARD
-        ========================= */
-
         body {
             background: #f6f1e7;
         }
-
 
         header {
             background: #7b1e2b;
             padding: 18px 6%;
         }
-
 
         .admin-header {
             display: flex;
@@ -137,7 +111,6 @@ if ($result) {
             gap: 25px;
         }
 
-
         .site-logo {
             color: white;
             text-decoration: none;
@@ -145,16 +118,13 @@ if ($result) {
             font-weight: bold;
         }
 
-
         .site-logo:hover {
             text-decoration: none;
         }
 
-
         nav {
             margin-top: 0;
         }
-
 
         nav a {
             color: white;
@@ -162,26 +132,15 @@ if ($result) {
             font-size: 14px;
         }
 
-
         nav a:last-child {
             margin-right: 0;
         }
-
-
-        /* =========================
-           MAIN CONTAINER
-        ========================= */
 
         .admin-container {
             width: 88%;
             max-width: 1200px;
             margin: 35px auto 60px;
         }
-
-
-        /* =========================
-           WELCOME SECTION
-        ========================= */
 
         .dashboard-hero {
             background: linear-gradient(
@@ -199,7 +158,6 @@ if ($result) {
             border: 1px solid #e2d2b5;
         }
 
-
         .dashboard-hero h2 {
             margin: 0 0 10px;
 
@@ -207,7 +165,6 @@ if ($result) {
 
             color: #7b1e2b;
         }
-
 
         .dashboard-hero p {
             margin: 7px 0;
@@ -217,15 +174,9 @@ if ($result) {
             font-size: 16px;
         }
 
-
         .welcome-name {
             color: #7b1e2b;
         }
-
-
-        /* =========================
-           STAT CARDS
-        ========================= */
 
         .stats-grid {
 
@@ -238,7 +189,6 @@ if ($result) {
 
             margin-bottom: 28px;
         }
-
 
         .stat-card {
 
@@ -258,7 +208,6 @@ if ($result) {
             overflow: hidden;
         }
 
-
         .stat-card::before {
 
             content: "";
@@ -276,14 +225,12 @@ if ($result) {
             background: #7b1e2b;
         }
 
-
         .stat-icon {
 
             font-size: 30px;
 
             margin-bottom: 12px;
         }
-
 
         .stat-label {
 
@@ -294,7 +241,6 @@ if ($result) {
             margin-bottom: 6px;
         }
 
-
         .stat-number {
 
             font-size: 34px;
@@ -303,7 +249,6 @@ if ($result) {
 
             color: #2d241f;
         }
-
 
         .stat-link {
 
@@ -315,11 +260,6 @@ if ($result) {
 
             font-size: 14px;
         }
-
-
-        /* =========================
-           PENDING ALERT
-        ========================= */
 
         .pending-alert {
 
@@ -342,13 +282,11 @@ if ($result) {
             gap: 20px;
         }
 
-
         .pending-alert-text strong {
 
             color: #7b1e2b;
 
         }
-
 
         .pending-alert-button {
 
@@ -366,18 +304,12 @@ if ($result) {
 
         }
 
-
         .pending-alert-button:hover {
 
             background: #5d1721;
 
             text-decoration: none;
         }
-
-
-        /* =========================
-           MANAGEMENT SECTION
-        ========================= */
 
         .section-title {
 
@@ -388,7 +320,6 @@ if ($result) {
             font-size: 22px;
         }
 
-
         .management-grid {
 
             display: grid;
@@ -398,7 +329,6 @@ if ($result) {
 
             gap: 20px;
         }
-
 
         .management-card {
 
@@ -418,7 +348,6 @@ if ($result) {
                 box-shadow 0.15s ease;
         }
 
-
         .management-card:hover {
 
             transform: translateY(-2px);
@@ -427,14 +356,12 @@ if ($result) {
                 0 8px 22px rgba(45, 36, 31, 0.12);
         }
 
-
         .management-icon {
 
             font-size: 30px;
 
             margin-bottom: 10px;
         }
-
 
         .management-card h3 {
 
@@ -445,7 +372,6 @@ if ($result) {
             font-size: 20px;
         }
 
-
         .management-card p {
 
             color: #6b5e55;
@@ -454,7 +380,6 @@ if ($result) {
 
             min-height: 45px;
         }
-
 
         .management-button {
 
@@ -473,18 +398,12 @@ if ($result) {
             text-decoration: none;
         }
 
-
         .management-button:hover {
 
             background: #5d1721;
 
             text-decoration: none;
         }
-
-
-        /* =========================
-           NO PENDING MESSAGE
-        ========================= */
 
         .no-pending {
 
@@ -500,11 +419,6 @@ if ($result) {
 
             color: #5f554e;
         }
-
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
 
         @media (max-width: 850px) {
 
@@ -535,7 +449,6 @@ if ($result) {
             }
 
         }
-
 
         @media (max-width: 600px) {
 
@@ -571,9 +484,7 @@ if ($result) {
 
 </head>
 
-
 <body>
-
 
 <header>
 
@@ -585,7 +496,6 @@ if ($result) {
         >
             Gauley Ko Pasal
         </a>
-
 
         <nav>
 
@@ -619,20 +529,15 @@ if ($result) {
 
 </header>
 
-
 <div class="admin-container">
 
-
-    <!-- =========================
-         WELCOME
-    ========================== -->
+    
 
     <div class="dashboard-hero">
 
         <h2>
             Admin Dashboard
         </h2>
-
 
         <p>
 
@@ -650,7 +555,6 @@ if ($result) {
 
         </p>
 
-
         <p>
             Manage Gauley Ko Pasal from one place.
             Review sellers, manage users, and monitor
@@ -659,10 +563,7 @@ if ($result) {
 
     </div>
 
-
-    <!-- =========================
-         PENDING SELLER ALERT
-    ========================== -->
+    
 
     <?php if ($pending_sellers > 0): ?>
 
@@ -686,7 +587,6 @@ if ($result) {
                 waiting for your review.
 
             </div>
-
 
             <a
                 href="sellers.php"
@@ -713,15 +613,11 @@ if ($result) {
 
     <?php endif; ?>
 
-
-    <!-- =========================
-         STATISTICS
-    ========================== -->
+    
 
     <div class="stats-grid">
 
-
-        <!-- USERS -->
+        
 
         <div class="stat-card">
 
@@ -748,8 +644,7 @@ if ($result) {
 
         </div>
 
-
-        <!-- SELLERS -->
+        
 
         <div class="stat-card">
 
@@ -776,8 +671,7 @@ if ($result) {
 
         </div>
 
-
-        <!-- APPLICATIONS -->
+        
 
         <div class="stat-card">
 
@@ -804,23 +698,17 @@ if ($result) {
 
         </div>
 
-
     </div>
 
-
-    <!-- =========================
-         MANAGEMENT
-    ========================== -->
+    
 
     <h2 class="section-title">
         Management
     </h2>
 
-
     <div class="management-grid">
 
-
-        <!-- SELLER APPLICATIONS -->
+        
 
         <div class="management-card">
 
@@ -840,7 +728,6 @@ if ($result) {
 
             </p>
 
-
             <a
                 href="sellers.php"
                 class="management-button"
@@ -850,8 +737,7 @@ if ($result) {
 
         </div>
 
-
-        <!-- APPROVED SELLERS -->
+        
 
         <div class="management-card">
 
@@ -871,7 +757,6 @@ if ($result) {
 
             </p>
 
-
             <a
                 href="approved_sellers.php"
                 class="management-button"
@@ -881,8 +766,7 @@ if ($result) {
 
         </div>
 
-
-        <!-- USERS -->
+        
 
         <div class="management-card">
 
@@ -901,7 +785,6 @@ if ($result) {
 
             </p>
 
-
             <a
                 href="users.php"
                 class="management-button"
@@ -911,8 +794,7 @@ if ($result) {
 
         </div>
 
-
-        <!-- ACTIVITY LOGS -->
+        
 
         <div class="management-card">
 
@@ -931,7 +813,6 @@ if ($result) {
 
             </p>
 
-
             <a
                 href="activity_logs.php"
                 class="management-button"
@@ -941,12 +822,9 @@ if ($result) {
 
         </div>
 
-
     </div>
 
-
 </div>
-
 
 <footer>
 
@@ -955,7 +833,6 @@ if ($result) {
     </p>
 
 </footer>
-
 
 </body>
 

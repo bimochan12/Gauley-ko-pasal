@@ -22,10 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $store_location = trim($_POST["store_location"]);
 
-
-    /* =========================
-       CHECK IF EMAIL EXISTS
-    ========================= */
+    
 
     $check_sql = "SELECT user_id
                   FROM users
@@ -42,7 +39,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $check_result = $check_stmt->get_result();
 
-
     if ($check_result->num_rows > 0) {
 
         $message =
@@ -50,10 +46,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     } else {
 
-
-        /* =========================
-           VALIDATE SHOP INFO
-        ========================= */
+        
 
         if (
             $has_shop === "Yes" &&
@@ -72,10 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         }
 
-
-        /* =========================
-           NATIONAL ID IMAGE
-        ========================= */
+        
 
         elseif (
             !isset($_FILES["national_id_image"]) ||
@@ -98,7 +88,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $_FILES["national_id_image"]["tmp_name"]
                 );
 
-
             if (
                 !in_array(
                     $file_type,
@@ -117,7 +106,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         PATHINFO_EXTENSION
                     );
 
-
                 $new_filename =
                     uniqid(
                         "national_id_",
@@ -126,11 +114,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     . "."
                     . $file_extension;
 
-
                 $upload_path =
                     "../uploads/national_ids/"
                     . $new_filename;
-
 
                 if (
                     move_uploaded_file(
@@ -139,17 +125,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     )
                 ) {
 
-
-                    /* =========================
-                       CREATE SELLER
-                    ========================= */
+                    
 
                     $hashed_password =
                         password_hash(
                             $password,
                             PASSWORD_DEFAULT
                         );
-
 
                     $sql = "INSERT INTO users
                             (
@@ -182,7 +164,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 ?
                             )";
 
-
                     $stmt = $conn->prepare($sql);
 
                     $stmt->bind_param(
@@ -199,7 +180,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $store_location
                     );
 
-
                     if ($stmt->execute()) {
 
                         $message =
@@ -207,10 +187,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     } else {
 
-                        /*
-                         Remove uploaded image if
-                         database insertion fails.
-                        */
+                        
 
                         if (
                             file_exists(
@@ -223,7 +200,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             );
 
                         }
-
 
                         $message =
                             "Something went wrong. Please try again.";
@@ -281,7 +257,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -295,7 +270,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </p>
 
     </div>
-
 
     <div class="card">
 
@@ -311,12 +285,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <?php endif; ?>
 
-
         <form
             method="POST"
             enctype="multipart/form-data"
         >
-
 
             <label>
                 Full Name
@@ -330,7 +302,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Email
             </label>
@@ -342,7 +313,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             >
 
             <br><br>
-
 
             <label>
                 Password
@@ -357,7 +327,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 Phone Number
             </label>
@@ -369,7 +338,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             >
 
             <br><br>
-
 
             <label>
                 Home Address
@@ -383,7 +351,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <label>
                 National ID / Citizenship Number
             </label>
@@ -395,7 +362,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             >
 
             <br><br>
-
 
             <label>
                 Upload National ID Card Photo
@@ -409,7 +375,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             >
 
             <br><br>
-
 
             <label>
                 Do you have a physical shop?
@@ -437,7 +402,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <div id="shop_fields">
 
                 <label>
@@ -454,7 +418,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             </div>
 
-
             <label>
                 Exact Operating / Store Location
             </label>
@@ -468,16 +431,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <br><br>
 
-
             <button type="submit">
                 Submit Registration
             </button>
 
         </form>
 
-
         <br>
-
 
         <p>
 
@@ -493,7 +453,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </div>
 
-
 <footer>
 
     <p>
@@ -501,7 +460,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </p>
 
 </footer>
-
 
 <script>
 
@@ -514,9 +472,7 @@ const shopFields =
 const shopName =
     document.getElementById("shop_name");
 
-
 shopFields.style.display = "none";
-
 
 hasShop.addEventListener(
     "change",

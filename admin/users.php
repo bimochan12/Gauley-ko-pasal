@@ -4,11 +4,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -18,14 +13,8 @@ if (
     exit();
 }
 
-
 $message = "";
 $message_type = "";
-
-
-/* =========================
-   DELETE USER
-========================= */
 
 if (
     $_SERVER["REQUEST_METHOD"] === "GET" &&
@@ -34,8 +23,7 @@ if (
 
     $delete_user_id = (int) $_GET["delete"];
 
-
-    /* Cannot delete yourself */
+    
 
     if ($delete_user_id === (int) $_SESSION["user_id"]) {
 
@@ -44,10 +32,7 @@ if (
 
     } else {
 
-        /* =========================
-           CHECK USER EXISTS
-           SELLERS CANNOT BE DELETED
-        ========================= */
+        
 
         $check_stmt = $conn->prepare(
             "SELECT user_id, name, role
@@ -65,7 +50,6 @@ if (
 
         $user_result = $check_stmt->get_result();
 
-
         if ($user_result->num_rows === 0) {
 
             $message = "User account not found.";
@@ -75,10 +59,7 @@ if (
 
             $user_to_delete = $user_result->fetch_assoc();
 
-
-            /* =========================
-               PROTECT LAST ADMIN
-            ========================= */
+            
 
             if ($user_to_delete["role"] === "admin") {
 
@@ -91,7 +72,6 @@ if (
                 $admin_count =
                     (int) $admin_result->fetch_assoc()["total"];
 
-
                 if ($admin_count <= 1) {
 
                     $message =
@@ -101,10 +81,7 @@ if (
                 }
             }
 
-
-            /* =========================
-               CHECK EXISTING ORDERS
-            ========================= */
+            
 
             if ($message === "") {
 
@@ -126,7 +103,6 @@ if (
                 $order_count =
                     (int) $order_result->fetch_assoc()["total"];
 
-
                 if ($order_count > 0) {
 
                     $message =
@@ -136,10 +112,7 @@ if (
                 }
             }
 
-
-            /* =========================
-               DELETE USER
-            ========================= */
+            
 
             if ($message === "") {
 
@@ -154,10 +127,9 @@ if (
                     $delete_user_id
                 );
 
-
                 if ($delete_stmt->execute()) {
 
-                    /* RECORD ACTIVITY */
+                    
 
                     $admin_id =
                         (int) $_SESSION["user_id"];
@@ -173,7 +145,6 @@ if (
                         ", Role: " .
                         $user_to_delete["role"] .
                         ").";
-
 
                     $log_stmt = $conn->prepare(
                         "INSERT INTO activity_logs
@@ -197,7 +168,6 @@ if (
                         $log_stmt->execute();
                     }
 
-
                     $message =
                         "User account deleted successfully.";
 
@@ -215,11 +185,6 @@ if (
     }
 }
 
-
-/* =========================
-   CREATE ADMIN ACCOUNT
-========================= */
-
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
     isset($_POST["create_user"])
@@ -234,8 +199,7 @@ if (
     $password =
         $_POST["password"];
 
-
-    /* Validate fields */
+    
 
     if (
         $name === "" ||
@@ -277,7 +241,7 @@ if (
 
     else {
 
-        /* Check duplicate email */
+        
 
         $check_stmt = $conn->prepare(
             "SELECT user_id
@@ -295,7 +259,6 @@ if (
         $check_result =
             $check_stmt->get_result();
 
-
         if (
             $check_result->num_rows > 0
         ) {
@@ -307,7 +270,7 @@ if (
 
         } else {
 
-            /* Hash password */
+            
 
             $hashed_password =
                 password_hash(
@@ -315,8 +278,7 @@ if (
                     PASSWORD_DEFAULT
                 );
 
-
-            /* Create admin */
+            
 
             $stmt = $conn->prepare(
                 "INSERT INTO users
@@ -342,10 +304,9 @@ if (
                 $hashed_password
             );
 
-
             if ($stmt->execute()) {
 
-                /* RECORD ACTIVITY */
+                
 
                 $admin_id =
                     (int) $_SESSION["user_id"];
@@ -362,7 +323,6 @@ if (
                     " (User ID: " .
                     $new_admin_id .
                     ").";
-
 
                 $log_stmt = $conn->prepare(
                     "INSERT INTO activity_logs
@@ -386,7 +346,6 @@ if (
                     $log_stmt->execute();
                 }
 
-
                 $message =
                     "Admin account created successfully.";
 
@@ -403,23 +362,12 @@ if (
     }
 }
 
-
-/* =========================
-   USER SEARCH
-========================= */
-
 $search = "";
 
 if (isset($_GET["search"])) {
 
     $search = trim($_GET["search"]);
 }
-
-
-/* =========================
-   GET USERS
-   EXCLUDE SELLERS
-========================= */
 
 if ($search !== "") {
 
@@ -519,16 +467,13 @@ if ($search !== "") {
 
 </head>
 
-
 <body>
-
 
 <header>
 
     <h1>
         Gauley Ko Pasal
     </h1>
-
 
     <nav>
 
@@ -556,9 +501,7 @@ if ($search !== "") {
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -571,7 +514,6 @@ if ($search !== "") {
         </p>
 
     </div>
-
 
     <?php if ($message !== ""): ?>
 
@@ -591,10 +533,7 @@ if ($search !== "") {
 
     <?php endif; ?>
 
-
-    <!-- =========================
-         CREATE ADMIN
-    ========================== -->
+    
 
     <div class="card">
 
@@ -606,7 +545,6 @@ if ($search !== "") {
             Create another administrator account.
         </p>
 
-
         <form method="POST">
 
             <input
@@ -614,7 +552,6 @@ if ($search !== "") {
                 name="create_user"
                 value="1"
             >
-
 
             <label>
                 Name
@@ -628,7 +565,6 @@ if ($search !== "") {
 
             <br><br>
 
-
             <label>
                 Email
             </label>
@@ -640,7 +576,6 @@ if ($search !== "") {
             >
 
             <br><br>
-
 
             <label>
                 Password
@@ -655,7 +590,6 @@ if ($search !== "") {
 
             <br><br>
 
-
             <button type="submit">
                 Create Admin
             </button>
@@ -664,13 +598,9 @@ if ($search !== "") {
 
     </div>
 
-
     <br>
 
-
-    <!-- =========================
-         REGISTERED USERS
-    ========================== -->
+    
 
     <div class="card">
 
@@ -683,10 +613,7 @@ if ($search !== "") {
             from the Sellers page.
         </p>
 
-
-        <!-- =========================
-             SEARCH USERS
-        ========================== -->
+        
 
         <form
             method="GET"
@@ -717,12 +644,10 @@ if ($search !== "") {
 
         </form>
 
-
         <?php if (
             $result &&
             $result->num_rows > 0
         ): ?>
-
 
             <table>
 
@@ -744,9 +669,7 @@ if ($search !== "") {
 
                 </thead>
 
-
                 <tbody>
-
 
                 <?php
 
@@ -759,7 +682,6 @@ if ($search !== "") {
 
                 ?>
 
-
                     <tr>
 
                         <td>
@@ -769,7 +691,6 @@ if ($search !== "") {
                             ?>
 
                         </td>
-
 
                         <td>
 
@@ -781,7 +702,6 @@ if ($search !== "") {
 
                         </td>
 
-
                         <td>
 
                             <?php
@@ -791,7 +711,6 @@ if ($search !== "") {
                             ?>
 
                         </td>
-
 
                         <td>
 
@@ -803,16 +722,13 @@ if ($search !== "") {
 
                         </td>
 
-
                         <td>
-
 
                             <?php if (
                                 (int) $user["user_id"]
                                 !==
                                 (int) $_SESSION["user_id"]
                             ): ?>
-
 
                                 <a
                                     href="users.php?delete=<?php
@@ -823,22 +739,17 @@ if ($search !== "") {
                                     Delete
                                 </a>
 
-
                             <?php else: ?>
-
 
                                 <span>
                                     Current Account
                                 </span>
 
-
                             <?php endif; ?>
-
 
                         </td>
 
                     </tr>
-
 
                     <?php
 
@@ -848,14 +759,11 @@ if ($search !== "") {
 
                     ?>
 
-
                 </tbody>
 
             </table>
 
-
         <?php else: ?>
-
 
             <p>
 
@@ -872,23 +780,17 @@ if ($search !== "") {
 
             </p>
 
-
         <?php endif; ?>
-
 
     </div>
 
-
     <br>
-
 
     <a href="dashboard.php">
         ← Back to Dashboard
     </a>
 
-
 </div>
-
 
 <footer>
 
@@ -898,7 +800,6 @@ if ($search !== "") {
     </p>
 
 </footer>
-
 
 </body>
 

@@ -5,11 +5,6 @@ session_start();
 
 require_once "../config/database.php";
 
-
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
-
 if (
     !isset($_SESSION["user_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -18,11 +13,6 @@ if (
     header("Location: login.php");
     exit();
 }
-
-
-/* =========================
-   GET ACTIVITY LOGS
-========================= */
 
 $sql = "
     SELECT
@@ -61,13 +51,11 @@ $result = $conn->query($sql);
 
 <body>
 
-
 <header>
 
     <h1>
         Gauley Ko Pasal
     </h1>
-
 
     <nav>
 
@@ -95,9 +83,7 @@ $result = $conn->query($sql);
 
 </header>
 
-
 <div class="container">
-
 
     <div class="hero">
 
@@ -111,19 +97,16 @@ $result = $conn->query($sql);
 
     </div>
 
-
     <div class="card">
 
         <h2>
             Recent Activities
         </h2>
 
-
         <?php if (
             $result &&
             $result->num_rows > 0
         ): ?>
-
 
             <table>
 
@@ -155,15 +138,12 @@ $result = $conn->query($sql);
 
                 </thead>
 
-
                 <tbody>
-
 
                     <?php while (
                         $log =
                         $result->fetch_assoc()
                     ): ?>
-
 
                         <tr>
 
@@ -175,7 +155,6 @@ $result = $conn->query($sql);
                                 ?>
 
                             </td>
-
 
                             <td>
 
@@ -202,7 +181,6 @@ $result = $conn->query($sql);
 
                             </td>
 
-
                             <td>
 
                                 <?php
@@ -212,7 +190,6 @@ $result = $conn->query($sql);
                                 ?>
 
                             </td>
-
 
                             <td>
 
@@ -224,7 +201,6 @@ $result = $conn->query($sql);
                                 ?>
 
                             </td>
-
 
                             <td>
 
@@ -238,39 +214,29 @@ $result = $conn->query($sql);
 
                         </tr>
 
-
                     <?php endwhile; ?>
-
 
                 </tbody>
 
             </table>
 
-
         <?php else: ?>
-
 
             <p>
                 No activity has been recorded yet.
             </p>
 
-
         <?php endif; ?>
-
 
     </div>
 
-
     <br>
-
 
     <a href="dashboard.php">
         ← Back to Dashboard
     </a>
 
-
 </div>
-
 
 <footer>
 
@@ -281,8 +247,8 @@ $result = $conn->query($sql);
 
 </footer>
 
-
 </body>
 
 </html>
 ```
+

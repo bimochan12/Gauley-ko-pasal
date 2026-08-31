@@ -68,7 +68,6 @@ $result = $stmt->get_result();
 
 </header>
 
-
 <div class="container">
 
     <div class="hero">
@@ -81,7 +80,6 @@ $result = $stmt->get_result();
 
     </div>
 
-
     <div style="margin-bottom: 20px;">
 
         <a
@@ -92,7 +90,6 @@ $result = $stmt->get_result();
         </a>
 
     </div>
-
 
     <?php if ($result->num_rows > 0): ?>
 
@@ -116,7 +113,6 @@ $result = $stmt->get_result();
 
                     <?php endif; ?>
 
-
                     <h3>
 
                         <?php
@@ -127,7 +123,6 @@ $result = $stmt->get_result();
 
                     </h3>
 
-
                     <p>
 
                         <?php
@@ -137,7 +132,6 @@ $result = $stmt->get_result();
                         ?>
 
                     </p>
-
 
                     <p>
 
@@ -153,7 +147,6 @@ $result = $stmt->get_result();
 
                     </p>
 
-
                     <p>
 
                         <strong>Quantity:</strong>
@@ -165,7 +158,6 @@ $result = $stmt->get_result();
                         ?>
 
                     </p>
-
 
                     <p>
 
@@ -179,9 +171,7 @@ $result = $stmt->get_result();
 
                     </p>
 
-
                     <br>
-
 
                     <a
                         class="button"
@@ -189,7 +179,6 @@ $result = $stmt->get_result();
                     >
                         Edit
                     </a>
-
 
                     <a
                         class="button"
@@ -219,9 +208,7 @@ $result = $stmt->get_result();
 
     <?php endif; ?>
 
-
 </div>
-
 
 <footer>
 
