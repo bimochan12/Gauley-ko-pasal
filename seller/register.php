@@ -8,66 +8,102 @@ $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $name = trim($_POST["name"]);
-    $email = trim($_POST["email"]);
-    $password = $_POST["password"];
-    $phone = trim($_POST["phone"]);
-    $address = trim($_POST["address"]);
+    $name = trim($_POST["name"] ?? "");
+    $email = trim($_POST["email"] ?? "");
+    $password = $_POST["password"] ?? "";
+    $phone = trim($_POST["phone"] ?? "");
+    $address = trim($_POST["address"] ?? "");
+    $national_id = trim($_POST["national_id"] ?? "");
 
-    $national_id = trim($_POST["national_id"]);
+    $has_shop = $_POST["has_shop"] ?? "";
+    $shop_name = trim($_POST["shop_name"] ?? "");
+    $store_location = trim($_POST["store_location"] ?? "");
 
-    $has_shop = $_POST["has_shop"];
 
-    $shop_name = trim($_POST["shop_name"]);
+    /* =========================
+       BASIC VALIDATION
+    ========================= */
 
-    $store_location = trim($_POST["store_location"]);
+    if ($name === "") {
 
-    
+        $message = "Please enter your full name.";
 
-    $check_sql = "SELECT user_id
-                  FROM users
-                  WHERE email = ?";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
-    $check_stmt = $conn->prepare($check_sql);
+        $message = "Please enter a valid email address.";
 
-    $check_stmt->bind_param(
-        "s",
-        $email
-    );
+    } elseif (strlen($password) < 8) {
 
-    $check_stmt->execute();
+        $message = "Password must be at least 8 characters long.";
 
-    $check_result = $check_stmt->get_result();
+    } elseif (!preg_match("/^[0-9]{10}$/", $phone)) {
 
-    if ($check_result->num_rows > 0) {
+        $message = "Phone number must contain exactly 10 digits.";
 
-        $message =
-            "An account with this email already exists.";
+    } elseif ($address === "") {
 
-    } else {
+        $message = "Please enter your home address.";
 
-        
+    } elseif ($national_id === "") {
 
-        if (
-            $has_shop === "Yes" &&
-            $shop_name === ""
-        ) {
+        $message = "Please enter your National ID / Citizenship Number.";
+
+    } elseif ($has_shop !== "Yes" && $has_shop !== "No") {
+
+        $message = "Please select whether you have a physical shop.";
+
+    } elseif ($has_shop === "Yes" && $shop_name === "") {
+
+        $message = "Please enter your shop name.";
+
+    } elseif ($store_location === "") {
+
+        $message = "Please enter your operating location.";
+
+    }
+
+
+    /* =========================
+       CHECK EMAIL
+    ========================= */
+
+    if ($message === "") {
+
+        $check_sql = "
+            SELECT user_id
+            FROM users
+            WHERE email = ?
+        ";
+
+        $check_stmt = $conn->prepare($check_sql);
+
+        $check_stmt->bind_param(
+            "s",
+            $email
+        );
+
+        $check_stmt->execute();
+
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
 
             $message =
-                "Please enter your shop name.";
-
-        } elseif (
-            $store_location === ""
-        ) {
-
-            $message =
-                "Please enter your operating location.";
+                "An account with this email already exists.";
 
         }
 
-        
+        $check_stmt->close();
+    }
 
-        elseif (
+
+    /* =========================
+       NATIONAL ID IMAGE
+    ========================= */
+
+    if ($message === "") {
+
+        if (
             !isset($_FILES["national_id_image"]) ||
             $_FILES["national_id_image"]["error"] !== UPLOAD_ERR_OK
         ) {
@@ -83,137 +119,157 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "image/webp"
             ];
 
-            $file_type =
-                mime_content_type(
-                    $_FILES["national_id_image"]["tmp_name"]
-                );
+            $file_type = mime_content_type(
+                $_FILES["national_id_image"]["tmp_name"]
+            );
 
-            if (
-                !in_array(
-                    $file_type,
-                    $allowed_types
-                )
-            ) {
+            if (!in_array($file_type, $allowed_types, true)) {
 
                 $message =
                     "National ID image must be JPG, PNG or WEBP.";
 
+            }
+
+        }
+
+    }
+
+
+    /* =========================
+       UPLOAD + DATABASE INSERT
+    ========================= */
+
+    if ($message === "") {
+
+        $file_extension = strtolower(
+            pathinfo(
+                $_FILES["national_id_image"]["name"],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        $new_filename =
+            uniqid("national_id_", true)
+            . "."
+            . $file_extension;
+
+        $upload_directory =
+            "../uploads/national_ids/";
+
+        $upload_path =
+            $upload_directory
+            . $new_filename;
+
+
+        /* Create upload folder if needed */
+
+        if (!is_dir($upload_directory)) {
+
+            mkdir(
+                $upload_directory,
+                0755,
+                true
+            );
+
+        }
+
+
+        if (
+            move_uploaded_file(
+                $_FILES["national_id_image"]["tmp_name"],
+                $upload_path
+            )
+        ) {
+
+
+            /* =========================
+               PASSWORD HASHING
+            ========================= */
+
+            $hashed_password = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+
+            /* =========================
+               INSERT SELLER
+            ========================= */
+
+            $sql = "
+                INSERT INTO users
+                (
+                    name,
+                    email,
+                    password,
+                    phone,
+                    address,
+                    role,
+                    national_id,
+                    national_id_image,
+                    seller_status,
+                    has_shop,
+                    shop_name,
+                    store_location
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    'seller',
+                    ?,
+                    ?,
+                    'Pending',
+                    ?,
+                    ?,
+                    ?
+                )
+            ";
+
+            $stmt = $conn->prepare($sql);
+
+            $stmt->bind_param(
+                "ssssssssss",
+                $name,
+                $email,
+                $hashed_password,
+                $phone,
+                $address,
+                $national_id,
+                $new_filename,
+                $has_shop,
+                $shop_name,
+                $store_location
+            );
+
+
+            if ($stmt->execute()) {
+
+                $message =
+                    "Registration submitted successfully! Please wait for admin approval.";
+
             } else {
 
-                $file_extension =
-                    pathinfo(
-                        $_FILES["national_id_image"]["name"],
-                        PATHINFO_EXTENSION
-                    );
+                if (file_exists($upload_path)) {
 
-                $new_filename =
-                    uniqid(
-                        "national_id_",
-                        true
-                    )
-                    . "."
-                    . $file_extension;
-
-                $upload_path =
-                    "../uploads/national_ids/"
-                    . $new_filename;
-
-                if (
-                    move_uploaded_file(
-                        $_FILES["national_id_image"]["tmp_name"],
-                        $upload_path
-                    )
-                ) {
-
-                    
-
-                    $hashed_password =
-                        password_hash(
-                            $password,
-                            PASSWORD_DEFAULT
-                        );
-
-                    $sql = "INSERT INTO users
-                            (
-                                name,
-                                email,
-                                password,
-                                phone,
-                                address,
-                                role,
-                                national_id,
-                                national_id_image,
-                                seller_status,
-                                has_shop,
-                                shop_name,
-                                store_location
-                            )
-                            VALUES
-                            (
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                'seller',
-                                ?,
-                                ?,
-                                'Pending',
-                                ?,
-                                ?,
-                                ?
-                            )";
-
-                    $stmt = $conn->prepare($sql);
-
-                    $stmt->bind_param(
-                        "ssssssssss",
-                        $name,
-                        $email,
-                        $hashed_password,
-                        $phone,
-                        $address,
-                        $national_id,
-                        $new_filename,
-                        $has_shop,
-                        $shop_name,
-                        $store_location
-                    );
-
-                    if ($stmt->execute()) {
-
-                        $message =
-                            "Registration submitted successfully! Please wait for admin approval.";
-
-                    } else {
-
-                        
-
-                        if (
-                            file_exists(
-                                $upload_path
-                            )
-                        ) {
-
-                            unlink(
-                                $upload_path
-                            );
-
-                        }
-
-                        $message =
-                            "Something went wrong. Please try again.";
-
-                    }
-
-                } else {
-
-                    $message =
-                        "Could not upload your National ID card image.";
+                    unlink($upload_path);
 
                 }
 
+                $message =
+                    "Something went wrong. Please try again.";
+
             }
+
+            $stmt->close();
+
+        } else {
+
+            $message =
+                "Could not upload your National ID card image.";
 
         }
 
@@ -224,6 +280,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 
 <!DOCTYPE html>
+
 <html>
 
 <head>
@@ -257,6 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </header>
 
+
 <div class="container">
 
     <div class="hero">
@@ -271,7 +329,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     </div>
 
+
     <div class="card">
+
 
         <?php if ($message !== ""): ?>
 
@@ -285,10 +345,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <?php endif; ?>
 
+
         <form
             method="POST"
             enctype="multipart/form-data"
         >
+
+
+            <!-- NAME -->
 
             <label>
                 Full Name
@@ -297,10 +361,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input
                 type="text"
                 name="name"
+                value="<?php echo htmlspecialchars($name ?? ""); ?>"
                 required
             >
 
+
             <br><br>
+
+
+            <!-- EMAIL -->
 
             <label>
                 Email
@@ -309,10 +378,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input
                 type="email"
                 name="email"
+                value="<?php echo htmlspecialchars($email ?? ""); ?>"
+                placeholder="example@gmail.com"
                 required
             >
 
+
             <br><br>
+
+
+            <!-- PASSWORD -->
 
             <label>
                 Password
@@ -321,23 +396,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input
                 type="password"
                 name="password"
-                minlength="6"
+                minlength="8"
                 required
             >
 
+            <small>
+                Password must be at least 8 characters.
+            </small>
+
+
             <br><br>
+
+
+            <!-- PHONE -->
 
             <label>
                 Phone Number
             </label>
 
             <input
-                type="text"
+                type="tel"
                 name="phone"
+                value="<?php echo htmlspecialchars($phone ?? ""); ?>"
+                pattern="[0-9]{10}"
+                minlength="10"
+                maxlength="10"
+                inputmode="numeric"
+                placeholder="98XXXXXXXX"
                 required
             >
 
+            <small>
+                Enter exactly 10 digits.
+            </small>
+
+
             <br><br>
+
+
+            <!-- ADDRESS -->
 
             <label>
                 Home Address
@@ -346,10 +443,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input
                 type="text"
                 name="address"
+                value="<?php echo htmlspecialchars($address ?? ""); ?>"
                 required
             >
 
+
             <br><br>
+
+
+            <!-- NATIONAL ID -->
 
             <label>
                 National ID / Citizenship Number
@@ -358,10 +460,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input
                 type="text"
                 name="national_id"
+                value="<?php echo htmlspecialchars($national_id ?? ""); ?>"
                 required
             >
 
+
             <br><br>
+
+
+            <!-- NATIONAL ID IMAGE -->
 
             <label>
                 Upload National ID Card Photo
@@ -374,7 +481,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 required
             >
 
+
             <br><br>
+
+
+            <!-- HAS SHOP -->
 
             <label>
                 Do you have a physical shop?
@@ -390,19 +501,44 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     Select an option
                 </option>
 
-                <option value="Yes">
+                <option
+                    value="Yes"
+                    <?php
+                    echo (
+                        ($has_shop ?? "") === "Yes"
+                        ? "selected"
+                        : ""
+                    );
+                    ?>
+                >
                     Yes
                 </option>
 
-                <option value="No">
+                <option
+                    value="No"
+                    <?php
+                    echo (
+                        ($has_shop ?? "") === "No"
+                        ? "selected"
+                        : ""
+                    );
+                    ?>
+                >
                     No
                 </option>
 
             </select>
 
+
             <br><br>
 
-            <div id="shop_fields">
+
+            <!-- SHOP NAME -->
+
+            <div
+                id="shop_fields"
+                style="display:none;"
+            >
 
                 <label>
                     Shop Name
@@ -412,11 +548,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     type="text"
                     name="shop_name"
                     id="shop_name"
+                    value="<?php echo htmlspecialchars($shop_name ?? ""); ?>"
                 >
 
                 <br><br>
 
             </div>
+
+
+            <!-- LOCATION -->
 
             <label>
                 Exact Operating / Store Location
@@ -425,19 +565,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input
                 type="text"
                 name="store_location"
+                value="<?php echo htmlspecialchars($store_location ?? ""); ?>"
                 placeholder="Where you operate your business from"
                 required
             >
 
+
             <br><br>
+
 
             <button type="submit">
                 Submit Registration
             </button>
 
+
         </form>
 
+
         <br>
+
 
         <p>
 
@@ -449,9 +595,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         </p>
 
+
     </div>
 
 </div>
+
 
 <footer>
 
@@ -460,6 +608,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </p>
 
 </footer>
+
 
 <script>
 
@@ -472,32 +621,44 @@ const shopFields =
 const shopName =
     document.getElementById("shop_name");
 
-shopFields.style.display = "none";
 
-hasShop.addEventListener(
-    "change",
-    function () {
+function updateShopFields() {
 
-        if (this.value === "Yes") {
+    if (hasShop.value === "Yes") {
 
-            shopFields.style.display = "block";
+        shopFields.style.display = "block";
 
-            shopName.required = true;
+        shopName.required = true;
 
-        } else {
+    } else {
 
-            shopFields.style.display = "none";
+        shopFields.style.display = "none";
 
-            shopName.required = false;
+        shopName.required = false;
+
+        if (hasShop.value === "No") {
 
             shopName.value = "";
 
         }
 
     }
+
+}
+
+
+hasShop.addEventListener(
+    "change",
+    updateShopFields
 );
 
+
+/* Keep shop fields visible after validation error */
+
+updateShopFields();
+
 </script>
+
 
 </body>
 
