@@ -1,94 +1,77 @@
 * {
     box-sizing: border-box;
 }
-
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #f8f3e9;
     color: #2d241f;
 }
-
 a {
     color: #7b1e2b;
     text-decoration: none;
     font-weight: bold;
 }
-
 a:hover {
     text-decoration: underline;
 }
-
 header {
     background: #7b1e2b;
     color: white;
     padding: 18px 8%;
 }
-
 header h1 {
     margin: 0;
     font-size: 28px;
 }
-
 nav {
     margin-top: 10px;
 }
-
 nav a {
     color: white;
     margin-right: 20px;
 }
-
 .container {
     width: 84%;
     max-width: 1100px;
     margin: 30px auto;
 }
-
 .hero {
     background: #efe1c3;
     padding: 45px;
     border-radius: 12px;
     margin-bottom: 30px;
 }
-
 .hero h2 {
     font-size: 36px;
     margin-top: 0;
     color: #7b1e2b;
 }
-
 .hero p {
     font-size: 18px;
 }
-
 .products {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 22px;
 }
-
 .product-card {
     background: white;
     padding: 22px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
-
 .product-card h3 {
     color: #7b1e2b;
     margin-top: 0;
 }
-
 .price {
     font-size: 20px;
     font-weight: bold;
 }
-
 .stock {
     color: #3f6b45;
 }
-
 .button {
     display: inline-block;
     background: #7b1e2b;
@@ -97,27 +80,22 @@ nav a {
     border-radius: 6px;
     margin-top: 10px;
 }
-
 .button:hover {
     background: #5d1721;
     text-decoration: none;
 }
-
 .card {
     background: white;
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
-
 form {
     max-width: 500px;
 }
-
 label {
     font-weight: bold;
 }
-
 input,
 textarea,
 select {
@@ -128,11 +106,9 @@ select {
     border-radius: 6px;
     font-size: 15px;
 }
-
 textarea {
     min-height: 100px;
 }
-
 button {
     background: #7b1e2b;
     color: white;
@@ -142,29 +118,24 @@ button {
     cursor: pointer;
     font-weight: bold;
 }
-
 button:hover {
     background: #5d1721;
 }
-
 table {
     width: 100%;
     border-collapse: collapse;
     background: white;
 }
-
 th {
     background: #7b1e2b;
     color: white;
 }
-
 th,
 td {
     padding: 12px;
     border: 1px solid #ddd;
     text-align: left;
 }
-
 footer {
     margin-top: 50px;
     background: #2d241f;
@@ -172,22 +143,18 @@ footer {
     padding: 25px 8%;
     text-align: center;
 }
-
 @media (max-width: 600px) {
-
     .container {
         width: 92%;
     }
-
     .hero {
         padding: 25px;
     }
-
     .hero h2 {
         font-size: 28px;
     }
-
     table {
         font-size: 13px;
     }
 }
+
