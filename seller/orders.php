@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -17,6 +16,13 @@ require_once "../config/database.php";
 $seller_id = (int) $_SESSION["user_id"];
 
 $message = "";
+
+
+/*
+|--------------------------------------------------------------------------
+| SUCCESS / ERROR MESSAGES
+|--------------------------------------------------------------------------
+*/
 
 if (
     isset($_GET["success"]) &&
@@ -51,12 +57,36 @@ if (isset($_GET["error"])) {
 
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| GET ACTIVE ORDERS
+|--------------------------------------------------------------------------
+|
+| We check BOTH:
+|
+| 1. order_items.status
+| 2. orders.status
+|
+| This allows a customer's cancelled order to appear here.
+|
+*/
+
 $sql = "
     SELECT
         orders.order_id,
         orders.order_date,
+        orders.status AS order_status,
+        orders.cancellation_reason,
+        orders.cancellation_note,
+        orders.cancelled_at,
+        orders.delivery_latitude,
+        orders.delivery_longitude,
+
         users.name AS customer_name,
         users.email AS customer_email,
+        users.phone AS customer_phone,
+        users.address AS customer_address,
 
         order_items.order_item_id,
         order_items.quantity,
@@ -78,9 +108,10 @@ $sql = "
         ON order_items.product_id = products.product_id
 
     WHERE products.seller_id = ?
+
     AND (
-        order_items.status = 'Pending'
-        OR order_items.status = 'Processing'
+        order_items.status IN ('Pending', 'Processing')
+        OR orders.status = 'Cancelled'
     )
 
     ORDER BY
@@ -102,9 +133,16 @@ $result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
         Active Orders - Gauley Ko Pasal
@@ -115,9 +153,87 @@ $result = $stmt->get_result();
         href="../style.css"
     >
 
+    <style>
+
+        .order-card {
+            margin-bottom: 25px;
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-processing {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .status-cancelled {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .cancellation-box {
+            margin-top: 20px;
+            padding: 18px;
+
+            background: #fff5f5;
+
+            border: 1px solid #fecaca;
+
+            border-radius: 10px;
+        }
+
+        .cancellation-box h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #b91c1c;
+        }
+
+        .cancellation-box p {
+            margin: 8px 0;
+        }
+
+        .customer-box {
+            margin-top: 18px;
+            padding: 15px;
+
+            background: #f7f8fa;
+
+            border-radius: 10px;
+        }
+
+        .location-box {
+            margin-top: 18px;
+            padding: 15px;
+
+            background: #eef6fd;
+
+            border-radius: 10px;
+        }
+
+        .status-update-box {
+            margin-top: 20px;
+            padding-top: 20px;
+
+            border-top: 1px solid #e5e7eb;
+        }
+
+    </style>
+
 </head>
 
 <body>
+
 
 <header>
 
@@ -151,7 +267,9 @@ $result = $stmt->get_result();
 
 </header>
 
+
 <div class="container">
+
 
     <div class="hero">
 
@@ -164,6 +282,7 @@ $result = $stmt->get_result();
         </p>
 
     </div>
+
 
     <?php if ($message !== ""): ?>
 
@@ -183,6 +302,7 @@ $result = $stmt->get_result();
 
     <?php endif; ?>
 
+
     <?php if (
         !$result ||
         $result->num_rows === 0
@@ -201,16 +321,33 @@ $result = $stmt->get_result();
 
         </div>
 
+
     <?php else: ?>
+
 
         <?php while (
             $item = $result->fetch_assoc()
         ): ?>
 
-            <div
-                class="card"
-                style="margin-bottom: 20px;"
-            >
+
+            <?php
+
+            $order_status =
+                $item["order_status"] ?? "Pending";
+
+            $item_status =
+                $item["item_status"] ?? "Pending";
+
+            $is_cancelled =
+                $order_status === "Cancelled";
+
+            ?>
+
+
+            <div class="card order-card">
+
+
+                <!-- ORDER NUMBER -->
 
                 <h2>
 
@@ -221,6 +358,56 @@ $result = $stmt->get_result();
                     ?>
 
                 </h2>
+
+
+                <!-- ORDER STATUS -->
+
+                <p>
+
+                    <strong>
+                        Order Status:
+                    </strong>
+
+                    <span
+                        class="order-status
+                        <?php
+
+                        if (
+                            $order_status === "Cancelled"
+                        ) {
+
+                            echo "status-cancelled";
+
+                        } elseif (
+                            $item_status === "Processing"
+                        ) {
+
+                            echo "status-processing";
+
+                        } else {
+
+                            echo "status-pending";
+
+                        }
+
+                        ?>"
+                    >
+
+                        <?php
+                        echo htmlspecialchars(
+                            $order_status
+                        );
+                        ?>
+
+                    </span>
+
+                </p>
+
+
+                <br>
+
+
+                <!-- PRODUCT -->
 
                 <p>
 
@@ -235,6 +422,7 @@ $result = $stmt->get_result();
                     ?>
 
                 </p>
+
 
                 <?php if (
                     !empty($item["image"])
@@ -252,15 +440,19 @@ $result = $stmt->get_result();
                         );
                         ?>"
                         style="
-                            width: 150px;
-                            max-height: 150px;
-                            object-fit: cover;
+                            width:150px;
+                            max-height:150px;
+                            object-fit:cover;
+                            margin-top:10px;
                         "
                     >
 
                     <br><br>
 
                 <?php endif; ?>
+
+
+                <!-- QUANTITY -->
 
                 <p>
 
@@ -274,6 +466,9 @@ $result = $stmt->get_result();
 
                 </p>
 
+
+                <!-- PRICE -->
+
                 <p>
 
                     <strong>
@@ -284,42 +479,87 @@ $result = $stmt->get_result();
 
                     <?php
                     echo number_format(
-                        $item["price"],
+                        (float) $item["price"],
                         2
                     );
                     ?>
 
                 </p>
 
-                <p>
 
-                    <strong>
-                        Customer:
-                    </strong>
+                <!-- CUSTOMER -->
 
-                    <?php
-                    echo htmlspecialchars(
-                        $item["customer_name"]
-                    );
-                    ?>
+                <div class="customer-box">
 
-                </p>
+                    <h3>
+                        Customer Information
+                    </h3>
 
-                <p>
+                    <p>
 
-                    <strong>
-                        Email:
-                    </strong>
+                        <strong>
+                            Name:
+                        </strong>
 
-                    <?php
-                    echo htmlspecialchars(
-                        $item["customer_email"]
-                    );
-                    ?>
+                        <?php
+                        echo htmlspecialchars(
+                            $item["customer_name"]
+                        );
+                        ?>
 
-                </p>
+                    </p>
 
-                <p>
+
+                    <p>
+
+                        <strong>
+                            Email:
+                        </strong>
+
+                        <?php
+                        echo htmlspecialchars(
+                            $item["customer_email"]
+                        );
+                        ?>
+
+                    </p>
+
+
+                    <p>
+
+                        <strong>
+                            Phone:
+                        </strong>
+
+                        <?php
+                        echo htmlspecialchars(
+                            $item["customer_phone"]
+                        );
+                        ?>
+
+                    </p>
+
+
+                    <p>
+
+                        <strong>
+                            Address:
+                        </strong>
+
+                        <?php
+                        echo htmlspecialchars(
+                            $item["customer_address"]
+                        );
+                        ?>
+
+                    </p>
+
+                </div>
+
+
+                <!-- ORDER DATE -->
+
+                <p style="margin-top:18px;">
 
                     <strong>
                         Order Date:
@@ -333,96 +573,304 @@ $result = $stmt->get_result();
 
                 </p>
 
-                <p>
+
+                <!-- DELIVERY LOCATION -->
+
+                <div class="location-box">
 
                     <strong>
-                        Current Status:
+                        📍 Delivery Location
                     </strong>
 
-                    <?php
-                    echo htmlspecialchars(
-                        $item["item_status"]
-                    );
-                    ?>
+                    <?php if (
+                        $item["delivery_latitude"] !== null &&
+                        $item["delivery_longitude"] !== null
+                    ): ?>
 
-                </p>
+                        <p>
 
-                <form
-                    method="POST"
-                    action="update_order.php"
-                >
+                            Latitude:
 
-                    <input
-                        type="hidden"
-                        name="order_item_id"
-                        value="<?php
-                        echo (int)
-                            $item["order_item_id"];
-                        ?>"
-                    >
-
-                    <label>
-                        Change Status
-                    </label>
-
-                    <select
-                        name="status"
-                        required
-                    >
-
-                        <option
-                            value="Pending"
                             <?php
-                            if (
-                                $item["item_status"]
-                                === "Pending"
-                            ) {
-                                echo "selected";
-                            }
+                            echo htmlspecialchars(
+                                $item["delivery_latitude"]
+                            );
                             ?>
-                        >
-                            Pending
-                        </option>
 
-                        <option
-                            value="Processing"
+                            <br>
+
+                            Longitude:
+
                             <?php
-                            if (
-                                $item["item_status"]
-                                === "Processing"
-                            ) {
-                                echo "selected";
-                            }
+                            echo htmlspecialchars(
+                                $item["delivery_longitude"]
+                            );
                             ?>
+
+                        </p>
+
+
+                        <p>
+
+                            <a
+                                href="https://www.google.com/maps?q=<?php
+                                    echo urlencode(
+                                        $item["delivery_latitude"]
+                                        . ","
+                                        . $item["delivery_longitude"]
+                                    );
+                                ?>"
+                                target="_blank"
+                            >
+                                📍 Open Delivery Location
+                            </a>
+
+                        </p>
+
+
+                    <?php else: ?>
+
+                        <p>
+                            Delivery location not available.
+                        </p>
+
+                    <?php endif; ?>
+
+                </div>
+
+
+                <!-- CANCELLATION INFORMATION -->
+
+                <?php if ($is_cancelled): ?>
+
+                    <div class="cancellation-box">
+
+                        <h3>
+                            ❌ Order Cancelled
+                        </h3>
+
+
+                        <p>
+
+                            <strong>
+                                Cancellation Reason:
+                            </strong>
+
+                            <?php
+
+                            if (
+                                !empty(
+                                    $item[
+                                        "cancellation_reason"
+                                    ]
+                                )
+                            ) {
+
+                                echo htmlspecialchars(
+                                    $item[
+                                        "cancellation_reason"
+                                    ]
+                                );
+
+                            } else {
+
+                                echo "Not provided.";
+
+                            }
+
+                            ?>
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Customer's Explanation:
+                            </strong>
+
+                            <br>
+
+                            <?php
+
+                            if (
+                                !empty(
+                                    $item[
+                                        "cancellation_note"
+                                    ]
+                                )
+                            ) {
+
+                                echo nl2br(
+                                    htmlspecialchars(
+                                        $item[
+                                            "cancellation_note"
+                                        ]
+                                    )
+                                );
+
+                            } else {
+
+                                echo "No additional explanation provided.";
+
+                            }
+
+                            ?>
+
+                        </p>
+
+
+                        <?php if (
+                            !empty(
+                                $item["cancelled_at"]
+                            )
+                        ): ?>
+
+                            <p>
+
+                                <strong>
+                                    Cancelled At:
+                                </strong>
+
+                                <?php
+                                echo htmlspecialchars(
+                                    $item["cancelled_at"]
+                                );
+                                ?>
+
+                            </p>
+
+                        <?php endif; ?>
+
+
+                    </div>
+
+
+                <?php endif; ?>
+
+
+                <!-- STATUS UPDATE -->
+
+                <?php if (!$is_cancelled): ?>
+
+                    <div class="status-update-box">
+
+                        <p>
+
+                            <strong>
+                                Product Status:
+                            </strong>
+
+                            <?php
+                            echo htmlspecialchars(
+                                $item_status
+                            );
+                            ?>
+
+                        </p>
+
+
+                        <form
+                            method="POST"
+                            action="update_order.php"
                         >
-                            Processing
-                        </option>
 
-                        <option value="Delivered">
-                            Delivered
-                        </option>
+                            <input
+                                type="hidden"
+                                name="order_item_id"
+                                value="<?php
+                                echo (int)
+                                    $item[
+                                        "order_item_id"
+                                    ];
+                                ?>"
+                            >
 
-                        <option value="Cancelled">
-                            Cancelled
-                        </option>
 
-                    </select>
+                            <label>
+                                Change Status
+                            </label>
 
-                    <br><br>
 
-                    <button type="submit">
-                        Update Product Status
-                    </button>
+                            <select
+                                name="status"
+                                required
+                            >
 
-                </form>
+                                <option
+                                    value="Pending"
+                                    <?php
+
+                                    if (
+                                        $item_status
+                                        === "Pending"
+                                    ) {
+
+                                        echo "selected";
+
+                                    }
+
+                                    ?>
+                                >
+                                    Pending
+                                </option>
+
+
+                                <option
+                                    value="Processing"
+                                    <?php
+
+                                    if (
+                                        $item_status
+                                        === "Processing"
+                                    ) {
+
+                                        echo "selected";
+
+                                    }
+
+                                    ?>
+                                >
+                                    Processing
+                                </option>
+
+
+                                <option value="Delivered">
+                                    Delivered
+                                </option>
+
+
+                            </select>
+
+
+                            <br><br>
+
+
+                            <button
+                                type="submit"
+                            >
+                                Update Product Status
+                            </button>
+
+
+                        </form>
+
+                    </div>
+
+                <?php endif; ?>
+
 
             </div>
 
+
         <?php endwhile; ?>
+
 
     <?php endif; ?>
 
+
 </div>
+
 
 <footer>
 
@@ -432,8 +880,7 @@ $result = $stmt->get_result();
 
 </footer>
 
+
 </body>
 
 </html>
-```
-

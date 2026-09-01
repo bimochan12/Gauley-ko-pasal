@@ -1,7 +1,14 @@
-
 <?php
 
 session_start();
+
+require_once "../config/database.php";
+
+/*
+|--------------------------------------------------------------------------
+| REQUIRE SELLER LOGIN
+|--------------------------------------------------------------------------
+*/
 
 if (
     !isset($_SESSION["user_id"]) ||
@@ -12,49 +19,73 @@ if (
     exit();
 }
 
-require_once "../config/database.php";
-
 $seller_id = (int) $_SESSION["user_id"];
+
+$orders = [];
+
+/*
+|--------------------------------------------------------------------------
+| GET ORDER HISTORY
+|--------------------------------------------------------------------------
+|
+| We only show orders containing products belonging to this seller.
+|
+*/
 
 $sql = "
     SELECT
-        orders.order_id,
-        orders.order_date,
+        o.order_id,
+        o.order_date,
+        o.total_amount,
+        o.status,
+        o.cancellation_reason,
+        o.cancellation_note,
+        o.cancelled_at,
 
-        users.name AS customer_name,
-        users.email AS customer_email,
+        u.name AS customer_name,
+        u.email AS customer_email,
 
-        order_items.order_item_id,
-        order_items.quantity,
-        order_items.price,
-        order_items.status AS item_status,
+        COUNT(oi.order_item_id) AS item_count
 
-        products.product_name,
-        products.image
+    FROM orders o
 
-    FROM order_items
+    INNER JOIN users u
+        ON o.user_id = u.user_id
 
-    INNER JOIN orders
-        ON order_items.order_id = orders.order_id
+    INNER JOIN order_items oi
+        ON o.order_id = oi.order_id
 
-    INNER JOIN users
-        ON orders.user_id = users.user_id
+    INNER JOIN products p
+        ON oi.product_id = p.product_id
 
-    INNER JOIN products
-        ON order_items.product_id = products.product_id
+    WHERE p.seller_id = ?
 
-    WHERE products.seller_id = ?
-    AND order_items.status IN (
-        'Delivered',
-        'Cancelled'
+    AND (
+        oi.status = 'Delivered'
+        OR oi.status = 'Cancelled'
+        OR o.status = 'Delivered'
+        OR o.status = 'Cancelled'
     )
 
-    ORDER BY
-        orders.order_date DESC,
-        order_items.order_item_id DESC
+    GROUP BY
+        o.order_id,
+        o.order_date,
+        o.total_amount,
+        o.status,
+        o.cancellation_reason,
+        o.cancellation_note,
+        o.cancelled_at,
+        u.name,
+        u.email
+
+    ORDER BY o.order_id DESC
 ";
 
 $stmt = $conn->prepare($sql);
+
+if (!$stmt) {
+    die("Database error.");
+}
 
 $stmt->bind_param(
     "i",
@@ -65,12 +96,24 @@ $stmt->execute();
 
 $result = $stmt->get_result();
 
+while ($order = $result->fetch_assoc()) {
+    $orders[] = $order;
+}
+
 ?>
 
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
 
 <head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
         Order History - Gauley Ko Pasal
@@ -81,9 +124,359 @@ $result = $stmt->get_result();
         href="../style.css"
     >
 
+    <style>
+
+        /*
+        |--------------------------------------------------------------------------
+        | PAGE
+        |--------------------------------------------------------------------------
+        */
+
+        .history-page {
+            width: 92%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 45px 0 80px;
+        }
+
+        .history-header {
+            margin-bottom: 30px;
+        }
+
+        .history-header h2 {
+            margin-bottom: 8px;
+        }
+
+        .history-header p {
+            color: #718096;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ORDER CARD
+        |--------------------------------------------------------------------------
+        */
+
+        .history-card {
+            background: white;
+            border: 1px solid #e4e9ef;
+            border-radius: 18px;
+            margin-bottom: 22px;
+            overflow: hidden;
+            box-shadow:
+                0 8px 25px rgba(20, 40, 70, 0.04);
+        }
+
+        .history-top {
+            padding: 22px 25px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+
+            border-bottom: 1px solid #edf1f5;
+        }
+
+        .order-number {
+            color: #102a43;
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .order-date {
+            color: #718096;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | STATUS
+        |--------------------------------------------------------------------------
+        */
+
+        .status {
+            display: inline-block;
+
+            padding: 7px 13px;
+
+            border-radius: 30px;
+
+            font-size: 11px;
+            font-weight: 900;
+
+            white-space: nowrap;
+        }
+
+        .status-delivered {
+            background: #e9f8ef;
+            color: #16834b;
+        }
+
+        .status-cancelled {
+            background: #fff0f0;
+            color: #d64545;
+        }
+
+        .status-pending {
+            background: #fff7df;
+            color: #9a6700;
+        }
+
+        .status-processing {
+            background: #eaf4ff;
+            color: #1976d2;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ORDER INFORMATION
+        |--------------------------------------------------------------------------
+        */
+
+        .history-body {
+            padding: 22px 25px;
+        }
+
+        .info-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 18px;
+        }
+
+        .info-box {
+            background: #f7f9fb;
+
+            border-radius: 10px;
+
+            padding: 14px;
+        }
+
+        .info-label {
+            display: block;
+
+            color: #718096;
+
+            font-size: 10px;
+
+            font-weight: 900;
+
+            letter-spacing: 0.5px;
+
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #172033;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            word-break: break-word;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CANCELLATION
+        |--------------------------------------------------------------------------
+        */
+
+        .cancellation-box {
+            margin-top: 20px;
+
+            padding: 18px;
+
+            background: #fff8f8;
+
+            border: 1px solid #f1cccc;
+
+            border-radius: 12px;
+        }
+
+        .cancellation-box h3 {
+            margin: 0 0 15px;
+
+            color: #b42323;
+
+            font-size: 15px;
+        }
+
+        .cancel-row {
+            padding: 10px 0;
+
+            border-bottom:
+                1px solid #f1dede;
+        }
+
+        .cancel-row:last-child {
+            border-bottom: none;
+        }
+
+        .cancel-label {
+            display: block;
+
+            color: #8b5a5a;
+
+            font-size: 10px;
+
+            font-weight: 900;
+
+            margin-bottom: 5px;
+        }
+
+        .cancel-value {
+            color: #572525;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BUTTONS
+        |--------------------------------------------------------------------------
+        */
+
+        .history-footer {
+            padding: 18px 25px;
+
+            background: #fafbfd;
+
+            border-top: 1px solid #edf1f5;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+        }
+
+        .history-total {
+            color: #102a43;
+
+            font-size: 18px;
+
+            font-weight: 900;
+        }
+
+        .details-button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            background: #102a43;
+
+            color: white;
+
+            text-decoration: none;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            font-weight: 800;
+        }
+
+        .details-button:hover {
+            background: #1976d2;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | EMPTY
+        |--------------------------------------------------------------------------
+        */
+
+        .empty-history {
+            background: white;
+
+            border: 1px solid #e4e9ef;
+
+            border-radius: 18px;
+
+            padding: 65px 30px;
+
+            text-align: center;
+        }
+
+        .empty-history-icon {
+            font-size: 55px;
+
+            margin-bottom: 15px;
+        }
+
+        .empty-history h3 {
+            color: #102a43;
+
+            margin-bottom: 8px;
+        }
+
+        .empty-history p {
+            color: #718096;
+
+            font-size: 13px;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | MOBILE
+        |--------------------------------------------------------------------------
+        */
+
+        @media (max-width: 800px) {
+
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            .history-top {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .history-footer {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+
 </head>
 
+
 <body>
+
+
+<!-- HEADER -->
 
 <header>
 
@@ -117,201 +510,403 @@ $result = $stmt->get_result();
 
 </header>
 
-<div class="container">
 
-    <div class="hero">
+<!-- PAGE -->
+
+<main class="history-page">
+
+
+    <div class="history-header">
 
         <h2>
-            Order History 📋
+            Order History 📦
         </h2>
 
         <p>
-            View delivered and cancelled
-            orders for your products.
+            View completed and cancelled orders
+            containing your products.
         </p>
 
     </div>
 
-    <?php if (
-        !$result ||
-        $result->num_rows === 0
-    ): ?>
 
-        <div class="card">
+    <?php if (empty($orders)): ?>
+
+
+        <!-- EMPTY -->
+
+        <div class="empty-history">
+
+            <div class="empty-history-icon">
+                📦
+            </div>
 
             <h3>
-                No order history yet.
+                No order history yet
             </h3>
 
             <p>
-                Delivered and cancelled product
-                orders will appear here.
+                Delivered and cancelled orders
+                will appear here.
             </p>
 
         </div>
 
+
     <?php else: ?>
 
-        <?php while (
-            $item = $result->fetch_assoc()
-        ): ?>
 
-            <div
-                class="card"
-                style="margin-bottom: 20px;"
-            >
+        <?php foreach ($orders as $order): ?>
 
-                <h2>
+            <?php
 
-                    Order #
+            $status =
+                $order["status"] ?? "Pending";
 
-                    <?php
-                    echo (int)
-                        $item["order_id"];
-                    ?>
+            $status_class =
+                "status-" .
+                strtolower($status);
 
-                </h2>
+            ?>
 
-                <p>
 
-                    <strong>
-                        Product:
-                    </strong>
+            <!-- ORDER CARD -->
 
-                    <?php
-                    echo htmlspecialchars(
-                        $item["product_name"]
-                    );
-                    ?>
+            <article class="history-card">
 
-                </p>
 
-                <?php if (
-                    !empty($item["image"])
-                ): ?>
+                <!-- TOP -->
 
-                    <img
-                        src="../uploads/<?php
-                        echo htmlspecialchars(
-                            $item["image"]
-                        );
+                <div class="history-top">
+
+                    <div>
+
+                        <div class="order-number">
+
+                            Order #
+
+                            <?php
+                            echo (int)
+                                $order["order_id"];
+                            ?>
+
+                        </div>
+
+
+                        <div class="order-date">
+
+                            Placed on
+
+                            <?php
+                            echo date(
+                                "M d, Y • h:i A",
+                                strtotime(
+                                    $order["order_date"]
+                                )
+                            );
+                            ?>
+
+                        </div>
+
+                    </div>
+
+
+                    <span
+                        class="status <?php
+                            echo htmlspecialchars(
+                                $status_class
+                            );
                         ?>"
-                        alt="<?php
-                        echo htmlspecialchars(
-                            $item["product_name"]
-                        );
-                        ?>"
-                        style="
-                            width: 150px;
-                            max-height: 150px;
-                            object-fit: cover;
-                        "
                     >
 
-                    <br><br>
+                        <?php
+                        echo htmlspecialchars(
+                            $status
+                        );
+                        ?>
 
-                <?php endif; ?>
+                    </span>
 
-                <p>
+                </div>
 
-                    <strong>
-                        Quantity:
+
+                <!-- BODY -->
+
+                <div class="history-body">
+
+
+                    <div class="info-grid">
+
+
+                        <!-- CUSTOMER -->
+
+                        <div class="info-box">
+
+                            <span class="info-label">
+                                CUSTOMER
+                            </span>
+
+                            <span class="info-value">
+
+                                <?php
+                                echo htmlspecialchars(
+                                    $order[
+                                        "customer_name"
+                                    ]
+                                );
+                                ?>
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- EMAIL -->
+
+                        <div class="info-box">
+
+                            <span class="info-label">
+                                EMAIL
+                            </span>
+
+                            <span class="info-value">
+
+                                <?php
+                                echo htmlspecialchars(
+                                    $order[
+                                        "customer_email"
+                                    ]
+                                );
+                                ?>
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- ITEMS -->
+
+                        <div class="info-box">
+
+                            <span class="info-label">
+                                YOUR ORDER ITEMS
+                            </span>
+
+                            <span class="info-value">
+
+                                <?php
+                                echo (int)
+                                    $order[
+                                        "item_count"
+                                    ];
+                                ?>
+
+                                item(s)
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- CANCELLATION INFORMATION -->
+
+                    <?php if (
+                        strtolower($status)
+                        === "cancelled"
+                    ): ?>
+
+
+                        <div class="cancellation-box">
+
+                            <h3>
+                                ⚠ Customer Cancellation
+                            </h3>
+
+
+                            <?php if (
+                                !empty(
+                                    $order[
+                                        "cancellation_reason"
+                                    ]
+                                )
+                            ): ?>
+
+                                <div class="cancel-row">
+
+                                    <span class="cancel-label">
+                                        REASON
+                                    </span>
+
+                                    <div class="cancel-value">
+
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $order[
+                                                "cancellation_reason"
+                                            ]
+                                        );
+                                        ?>
+
+                                    </div>
+
+                                </div>
+
+                            <?php endif; ?>
+
+
+                            <?php if (
+                                !empty(
+                                    $order[
+                                        "cancellation_note"
+                                    ]
+                                )
+                            ): ?>
+
+                                <div class="cancel-row">
+
+                                    <span class="cancel-label">
+                                        CUSTOMER NOTE
+                                    </span>
+
+                                    <div class="cancel-value">
+
+                                        <?php
+                                        echo nl2br(
+                                            htmlspecialchars(
+                                                $order[
+                                                    "cancellation_note"
+                                                ]
+                                            )
+                                        );
+                                        ?>
+
+                                    </div>
+
+                                </div>
+
+                            <?php endif; ?>
+
+
+                            <?php if (
+                                !empty(
+                                    $order[
+                                        "cancelled_at"
+                                    ]
+                                )
+                            ): ?>
+
+                                <div class="cancel-row">
+
+                                    <span class="cancel-label">
+                                        CANCELLED AT
+                                    </span>
+
+                                    <div class="cancel-value">
+
+                                        <?php
+                                        echo date(
+                                            "M d, Y • h:i A",
+                                            strtotime(
+                                                $order[
+                                                    "cancelled_at"
+                                                ]
+                                            )
+                                        );
+                                        ?>
+
+                                    </div>
+
+                                </div>
+
+                            <?php endif; ?>
+
+
+                            <?php if (
+                                empty(
+                                    $order[
+                                        "cancellation_reason"
+                                    ]
+                                ) &&
+                                empty(
+                                    $order[
+                                        "cancellation_note"
+                                    ]
+                                )
+                            ): ?>
+
+                                <div class="cancel-value">
+
+                                    No cancellation explanation
+                                    was provided.
+
+                                </div>
+
+                            <?php endif; ?>
+
+
+                        </div>
+
+
+                    <?php endif; ?>
+
+
+                </div>
+
+
+                <!-- FOOTER -->
+
+                <div class="history-footer">
+
+
+                    <strong class="history-total">
+
+                        Rs.
+
+                        <?php
+                        echo number_format(
+                            (float)
+                            $order[
+                                "total_amount"
+                            ],
+                            2
+                        );
+                        ?>
+
                     </strong>
 
-                    <?php
-                    echo (int)
-                        $item["quantity"];
-                    ?>
 
-                </p>
+                    <a
+                        href="order_details.php?order_id=<?php
+                            echo (int)
+                                $order["order_id"];
+                        ?>"
+                        class="details-button"
+                    >
 
-                <p>
+                        View Order Details →
 
-                    <strong>
-                        Price:
-                    </strong>
+                    </a>
 
-                    Rs.
 
-                    <?php
-                    echo number_format(
-                        $item["price"],
-                        2
-                    );
-                    ?>
+                </div>
 
-                </p>
 
-                <p>
+            </article>
 
-                    <strong>
-                        Customer:
-                    </strong>
 
-                    <?php
-                    echo htmlspecialchars(
-                        $item["customer_name"]
-                    );
-                    ?>
+        <?php endforeach; ?>
 
-                </p>
-
-                <p>
-
-                    <strong>
-                        Email:
-                    </strong>
-
-                    <?php
-                    echo htmlspecialchars(
-                        $item["customer_email"]
-                    );
-                    ?>
-
-                </p>
-
-                <p>
-
-                    <strong>
-                        Order Date:
-                    </strong>
-
-                    <?php
-                    echo htmlspecialchars(
-                        $item["order_date"]
-                    );
-                    ?>
-
-                </p>
-
-                <p>
-
-                    <strong>
-                        Final Status:
-                    </strong>
-
-                    <?php
-                    echo htmlspecialchars(
-                        $item["item_status"]
-                    );
-                    ?>
-
-                </p>
-
-                <p>
-
-                    This product order is completed
-                    and can no longer be managed.
-
-                </p>
-
-            </div>
-
-        <?php endwhile; ?>
 
     <?php endif; ?>
 
-</div>
+
+</main>
+
+
+<!-- FOOTER -->
 
 <footer>
 
@@ -321,8 +916,7 @@ $result = $stmt->get_result();
 
 </footer>
 
+
 </body>
 
 </html>
-```
-
